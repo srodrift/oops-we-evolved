@@ -5,6 +5,7 @@ import {
 import { executeNova } from "./nova";
 import {
   ARENA_TASK,
+  type MissionTask,
   type AtlasDecision,
   type AtlasTest,
   type HarnessConfig,
@@ -16,6 +17,7 @@ export async function judgeProposal(
   proposal: HarnessConfig & { cause: RaindropCause },
   registry: ToolRegistry,
   evidence: RaindropFailureEvent,
+  task: MissionTask = ARENA_TASK,
 ): Promise<AtlasDecision> {
   const tests: AtlasTest[] = [];
   const check = (name: string, passed: boolean, detail: string) => {
@@ -86,6 +88,7 @@ export async function judgeProposal(
 
   if (enabled.length === 1 && tool) {
     const run = await executeNova(proposal, registry, {
+      task,
       priorFailure: {
         toolName: evidence.span.name,
         errorName: evidence.span.error.name,
@@ -106,13 +109,13 @@ export async function judgeProposal(
       "execution-succeeds",
       run.ok,
       run.ok
-        ? "NOVA completed the task."
-        : (run.errorMessage ?? "NOVA failed."),
+        ? "The agent completed the task."
+        : (run.errorMessage ?? "The agent failed."),
     );
     check(
       "headline-matches",
-      run.headline === ARENA_TASK.expectedHeadline,
-      `Headline: ${run.headline ?? "none"}.`,
+      run.headline === task.expectedHeadline,
+      `Expected: ${task.expectedHeadline}. Actual: ${run.headline ?? "none"}.`,
     );
     check(
       "context-retained-failure",
@@ -144,7 +147,7 @@ export async function judgeProposal(
   const accepted = failed.length === 0;
   return {
     accepted,
-    actor: "ATLAS",
+    actor: "Verification",
     reason: accepted
       ? `Accepted. All ${tests.length} requirements passed. Raindrop span ${evidence.span.name} (${evidence.span.error.name}) is not the tool the rerun called.`
       : `Rejected. Failed requirements: ${failed.map((test) => test.name).join(", ")}. ${failed.map((test) => test.detail).join(" ")}`,

@@ -19,10 +19,10 @@ export const infrastructureNodes = [
   },
   {
     id: "nova",
-    short: "NOVA",
+    short: "Agent",
     x: 380,
     y: 330,
-    title: "NOVA",
+    title: "AGENT",
     sub: "Agent execution core",
     color: "#b9a0ff",
     height: 76,
@@ -39,30 +39,30 @@ export const infrastructureNodes = [
   },
   {
     id: "morph",
-    short: "MORPH",
+    short: "Repair",
     x: 180,
     y: 440,
-    title: "MORPH",
+    title: "HARNESS REPAIR",
     sub: "Harness mutation lab",
     color: "#d5ef8a",
     height: 48,
   },
   {
     id: "atlas",
-    short: "ATLAS",
+    short: "Verify",
     x: 470,
     y: 510,
-    title: "ATLAS",
-    sub: "Verification & persistence",
+    title: "VERIFICATION",
+    sub: "Requirements checks",
     color: "#8bcfee",
     height: 55,
   },
   {
     id: "glitch",
-    short: "GLITCH",
+    short: "Raindrop",
     x: 170,
     y: 300,
-    title: "GLITCH / RAINDROP",
+    title: "RAINDROP",
     sub: "Failure evidence station",
     color: "#eab778",
     height: 33,
@@ -110,7 +110,7 @@ const routes = [
     path: "M470 510L560 465 690 390",
     stage: 4,
     color: "#8bcfee",
-    label: "ATLAS TEST CALL",
+    label: "VERIFICATION CALL",
     labelX: 584,
     labelY: 478,
   },
@@ -485,7 +485,7 @@ export function InfrastructureMap({
             ? "Waiting for real evidence…"
             : report
               ? simulation.rejected
-                ? "ATLAS blocks the candidate"
+                ? "Verification blocks the candidate"
                 : LAB_STAGES[stage].title
               : "A city of agent infrastructure."}
         </h3>

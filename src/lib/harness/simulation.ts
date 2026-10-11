@@ -5,7 +5,7 @@ export const LAB_STAGES = [
     label: "Challenge",
     step: 1,
     actor: "nova",
-    title: "NOVA receives the mission",
+    title: "The agent receives your mission",
     caption: "The original harness authorizes only the primary channel.",
   },
   {
@@ -14,13 +14,13 @@ export const LAB_STAGES = [
     actor: "orbital",
     title: "The primary connection fails",
     caption:
-      "An actual tool exception is recorded. NOVA does not invent a headline.",
+      "An actual tool exception is recorded. The agent does not invent a headline.",
   },
   {
-    label: "Raindrop Diagnosis",
+    label: "Raindrop Evidence",
     step: 3,
     actor: "glitch",
-    title: "GLITCH captures the cause",
+    title: "The tool failure is captured",
     caption:
       "The tool span and diagnostic share an event ID. Delivery status is recorded separately.",
   },
@@ -28,15 +28,15 @@ export const LAB_STAGES = [
     label: "Harness Mutation",
     step: 4,
     actor: "morph",
-    title: "MORPH proposes a new route",
+    title: "A new tool route is proposed",
     caption:
       "The fallback is proposed, not yet approved. Tools, rules and guardrails change together.",
   },
   {
-    label: "ATLAS Verification",
+    label: "Verification",
     step: 5,
     actor: "atlas",
-    title: "ATLAS tests the candidate",
+    title: "The repaired harness is tested",
     caption:
       "A successful fallback response must also satisfy the mission requirements.",
   },
@@ -55,13 +55,13 @@ export const EXPERIMENTS = [
     id: "primary-outage",
     label: "Primary outage",
     description:
-      "orbital_uplink throws. The archive returns the correct brief. MORPH can recover the mission.",
+      "orbital_uplink throws. The archive returns the correct brief. The harness can recover the mission.",
   },
   {
     id: "corrupt-archive",
     label: "Corrupt fallback",
     description:
-      "orbital_uplink throws. The archive responds with the wrong headline. ATLAS must reject the candidate.",
+      "orbital_uplink throws. The archive responds with the wrong headline. Verification must reject the candidate.",
   },
 ] as const;
 export type ExperimentId = (typeof EXPERIMENTS)[number]["id"];

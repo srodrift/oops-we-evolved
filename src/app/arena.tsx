@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { toBoard } from "@/lib/harness/board";
 import Link from "next/link";
 import Image from "next/image";
+import { InfrastructureScene } from "@/components/infrastructure-scene";
+import { DEFAULT_BRIEF } from "@/lib/harness/mission";
 import {
   InfrastructureMap,
   infrastructureNodes,
@@ -38,6 +40,8 @@ export function Arena({ seed }: { seed: HarnessConfig }) {
   const [experiment, setExperiment] = useState<ExperimentId>("primary-outage");
   const [cameraReset, setCameraReset] = useState(0);
   const [follow, setFollow] = useState(true);
+  const [brief, setBrief] = useState(DEFAULT_BRIEF);
+  const [sceneView, setSceneView] = useState<"3d" | "blueprint">("3d");
   const dialog = useRef<HTMLDialogElement>(null);
   const board = toBoard(seed, report);
   const simulation = simulationState(report, stage);
@@ -81,7 +85,7 @@ export function Arena({ seed }: { seed: HarnessConfig }) {
       const response = await fetch("/api/cycle", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ scenario: experiment }),
+        body: JSON.stringify({ scenario: experiment, brief }),
       });
       const body = await response.json();
       if (!response.ok) throw new Error(body.error ?? "Mission failed");
@@ -120,17 +124,17 @@ export function Arena({ seed }: { seed: HarnessConfig }) {
     selected === "glitch"
       ? simulation.captured
         ? (simulation.evidence?.diagnosis.summary ?? "No diagnosis recorded.")
-        : "GLITCH diagnoses the actual thrown tool error and captures its span in Raindrop evidence."
+        : "Failure diagnosis reads the actual thrown tool error and captures its span in Raindrop evidence."
       : selected === "orbital"
         ? ((simulation.failed ? board.nova.errorMessage : null) ??
-          "The scenario deliberately throws a real ToolUnavailableError when NOVA invokes orbital_uplink.")
+          "The scenario deliberately throws a real ToolUnavailableError when the agent invokes orbital_uplink.")
         : selected === "archive"
           ? simulation.rejected
             ? (recordedStep(report, 5)?.detail ??
               "The fallback failed requirements.")
             : board.nova.rerun && evolved
               ? board.nova.rerun
-              : "Local tool implementation holds the status brief. MORPH must authorize it before NOVA can use it."
+              : "Local tool implementation holds the status brief. The harness must authorize it before the agent can use it."
           : selected === "morph"
             ? stage >= 3
               ? (board.morph.rationale ?? "No mutation was proposed.")
@@ -146,9 +150,9 @@ export function Arena({ seed }: { seed: HarnessConfig }) {
   return (
     <main className="lab-root">
       <header className="lab-header">
-        <Link className="brand" href="/" aria-label="MORPH LAB home">
-          <span className="brand-mark">◈</span> MORPH
-          <span className="brand-light">LAB</span>
+        <Link className="brand" href="/" aria-label="Oops, We Evolved! home">
+          <span className="brand-mark">◈</span>
+          <span className="brand-name">Oops, We Evolved!</span>
         </Link>
         <nav aria-label="Views">
           <button
@@ -165,17 +169,17 @@ export function Arena({ seed }: { seed: HarnessConfig }) {
           </button>
         </nav>
         <span className="header-meta">
-          <i className="dot" /> AGENT EVOLUTION LABORATORY <span>SF / 01</span>
+          <i className="dot" /> AGENT HARNESS RECOVERY <span>SF / 01</span>
         </span>
       </header>
       <section className="intro">
         <div>
           <p className="eyebrow">
-            RESILIENT COMMUNICATIONS / CONTROLLED EXPERIMENT
+            AGENT RESILIENCE / OPERATOR-SUPPLIED INCIDENT BRIEF
           </p>
-          <h1>Failure is the beginning.</h1>
+          <h1>Broken tools. Verified recovery.</h1>
           <p className="intro-copy">
-            Break the connection. Observe the evidence. Evolve the harness.
+            When an agent’s API breaks, repair the harness—not the answer.
           </p>
         </div>
         <div className="mission-state">
@@ -208,9 +212,7 @@ export function Arena({ seed }: { seed: HarnessConfig }) {
           <div className="panel-top">
             <span>
               <i className="dot" />{" "}
-              {view === "lab"
-                ? "INFRASTRUCTURE DIGITAL TWIN"
-                : "SAN FRANCISCO / WORLD"}
+              {view === "lab" ? "AGENT TOOL NETWORK" : "ORIGINAL ARTWORK"}
             </span>
             <span className={running ? "mode live" : "mode"}>
               {running
@@ -247,24 +249,60 @@ export function Arena({ seed }: { seed: HarnessConfig }) {
                 <p>
                   {evolved
                     ? board.nova.rerun
-                    : "Pulse unlocks only after ATLAS approval, persistence and a successful rerun."}
+                    : "Pulse unlocks only after verification approval, persistence and a successful rerun."}
                 </p>
               </div>
             </div>
           ) : (
-            <InfrastructureMap
-              key={cameraReset}
-              stage={stage}
-              report={report}
-              selected={selected}
-              onSelect={(id) => {
-                setSelected(id);
-                setFollow(false);
-              }}
-              playing={playing}
-              running={running}
-              speed={speed}
-            />
+            <div>
+              <div
+                className="scene-view-tabs"
+                aria-label="Simulation rendering"
+              >
+                <button
+                  aria-pressed={sceneView === "3d"}
+                  onClick={() => setSceneView("3d")}
+                >
+                  3D Orbit
+                </button>
+                <button
+                  aria-pressed={sceneView === "blueprint"}
+                  onClick={() => setSceneView("blueprint")}
+                >
+                  Blueprint
+                </button>
+                <span>Camera changes the view. Run changes the harness.</span>
+              </div>
+              {sceneView === "3d" ? (
+                <InfrastructureScene
+                  key={`3d-${cameraReset}`}
+                  stage={stage}
+                  report={report}
+                  selected={selected}
+                  onSelect={(id) => {
+                    setSelected(id);
+                    setFollow(false);
+                  }}
+                  playing={playing}
+                  running={running}
+                  speed={speed}
+                />
+              ) : (
+                <InfrastructureMap
+                  key={`map-${cameraReset}`}
+                  stage={stage}
+                  report={report}
+                  selected={selected}
+                  onSelect={(id) => {
+                    setSelected(id);
+                    setFollow(false);
+                  }}
+                  playing={playing}
+                  running={running}
+                  speed={speed}
+                />
+              )}
+            </div>
           )}
           <div className="map-footer">
             <div>
@@ -339,11 +377,25 @@ export function Arena({ seed }: { seed: HarnessConfig }) {
           </div>
           <div className="operator-body">
             <p className="eyebrow">MISSION BRIEF</p>
-            <h2>Restore the signal.</h2>
+            <h2>Recover your incident brief.</h2>
             <p>
-              NOVA must retrieve the status brief with an unavailable primary
-              tool. Watch MORPH repair the harness from the failure.
+              Mission: retrieve your brief and return its first-line headline.
+              Verification checks the tool’s answer against your source.
             </p>
+            <div className="brief-input">
+              <label className="eyebrow" htmlFor="source-brief">
+                YOUR SOURCE BRIEF / FIRST LINE IS HEADLINE
+              </label>
+              <textarea
+                id="source-brief"
+                value={brief}
+                disabled={running}
+                maxLength={4000}
+                rows={4}
+                onChange={(e) => setBrief(e.target.value)}
+              />
+              <p>Local archive input · {brief.length} / 4,000 characters</p>
+            </div>
             <div className="experiment-picker">
               <label className="eyebrow" htmlFor="experiment">
                 FAULT INJECTION / LOCAL TOOLS
@@ -366,17 +418,23 @@ export function Arena({ seed }: { seed: HarnessConfig }) {
                     ?.description
                 }
               </p>
-              {report && report.scenario !== experiment && (
-                <p className="scenario-notice">
-                  Showing the previous experiment. Run Mission to apply this
-                  selection.
-                </p>
-              )}
+              {report &&
+                (report.scenario !== experiment ||
+                  report.input?.brief !== brief.trim()) && (
+                  <p className="scenario-notice">
+                    Input changed. Run Mission to execute this brief and fault;
+                    the map still shows the previous report.
+                  </p>
+                )}
             </div>
             <button
               className="run-button"
               onClick={runMission}
-              disabled={running}
+              disabled={
+                running ||
+                !brief.trim() ||
+                (brief.trim().split(/\r?\n/)[0]?.length ?? 0) > 180
+              }
             >
               <span>{running ? "Executing…" : "Run Mission"}</span>
               <span>↗</span>
@@ -486,10 +544,12 @@ export function Arena({ seed }: { seed: HarnessConfig }) {
                 </strong>
               </div>
               <div>
-                <span>Persistence</span>
+                <span>MongoDB Atlas</span>
                 <strong>
                   {stage === 5 && report
-                    ? `${report.store} · ${report.steps.find((s) => s.index === 6)?.status}`
+                    ? report.store === "mongodb"
+                      ? `MongoDB · ${report.steps.find((s) => s.index === 6)?.status}`
+                      : `Not used · ${report.store} store`
                     : "Not observed"}
                 </strong>
               </div>
@@ -577,6 +637,32 @@ export function Arena({ seed }: { seed: HarnessConfig }) {
             "Run a mission to capture a new execution. Events are replayed sequentially after the backend returns."}
         </p>
       </section>
+      {report?.input && (
+        <section className="mission-proof">
+          <div>
+            <p className="eyebrow">OPERATOR INPUT → VERIFIED OUTPUT</p>
+            <h3>
+              {simulation.recovered
+                ? "Your headline, recovered."
+                : simulation.rejected
+                  ? "The wrong headline was blocked."
+                  : "Verification follows your source."}
+            </h3>
+            <p>Mission: {report.task.instruction}</p>
+          </div>
+          <div>
+            <span>Source headline</span>
+            <code>{report.task.expectedHeadline}</code>
+            <span>Actual final output</span>
+            <code className={simulation.recovered ? "pass" : ""}>
+              {stage === 5
+                ? ((recordedStep(report, 7)?.evidence as { headline?: string })
+                    ?.headline ?? "No approved output")
+                : "Not replayed yet"}
+            </code>
+          </div>
+        </section>
+      )}
       <section className="verification-grid">
         <div className="verification-card">
           <p className="eyebrow">HARNESS CONFIGURATION</p>
@@ -669,7 +755,7 @@ export function Arena({ seed }: { seed: HarnessConfig }) {
           )}
         </div>
         <div className="verification-card">
-          <p className="eyebrow">ATLAS / REQUIREMENTS VERIFICATION</p>
+          <p className="eyebrow">REQUIREMENTS VERIFICATION</p>
           <h3>
             {visibleTests.length
               ? `${board.atlas.passed} passed · ${board.atlas.failed} failed`
@@ -687,8 +773,8 @@ export function Arena({ seed }: { seed: HarnessConfig }) {
               ))
             ) : (
               <p>
-                ATLAS evaluates the proposed harness. These runtime checks are
-                separate from the repository test suite.
+                Verification evaluates the proposed harness. These runtime
+                checks are separate from the repository test suite.
               </p>
             )}
           </div>
@@ -696,7 +782,7 @@ export function Arena({ seed }: { seed: HarnessConfig }) {
       </section>
       <footer className="lab-footer">
         <span>
-          MORPH LAB <span>/ OOPS, WE EVOLVED!</span>
+          Oops, We Evolved! <span>/ VERIFIED AGENT RECOVERY</span>
         </span>
         <span>
           Controlled environment. Real execution. Traceable evolution.

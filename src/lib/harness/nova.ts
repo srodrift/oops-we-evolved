@@ -1,8 +1,18 @@
-import { ARENA_TASK, type HarnessConfig, type NovaRun } from "./types";
+import {
+  ARENA_TASK,
+  type HarnessConfig,
+  type NovaRun,
+  type MissionTask,
+} from "./types";
 import type { ToolRegistry } from "./tools";
 
 export type NovaContext = {
-  priorFailure: { toolName: string; errorName: string; errorMessage: string } | null;
+  task?: MissionTask;
+  priorFailure: {
+    toolName: string;
+    errorName: string;
+    errorMessage: string;
+  } | null;
 };
 
 export async function executeNova(
@@ -10,27 +20,36 @@ export async function executeNova(
   registry: ToolRegistry,
   context: NovaContext,
 ): Promise<NovaRun> {
+  const task = context.task ?? ARENA_TASK;
   const started = Date.now();
   const base = {
-    taskId: ARENA_TASK.id,
+    taskId: task.id,
     configVersion: config.version,
     headline: null,
     errorName: null,
     errorMessage: null,
     stack: null,
     retainedFailure: false,
-    guardrailHeld: config.guardrails.some((guardrail) => guardrail.id === "no-fabricated-headline"),
+    guardrailHeld: config.guardrails.some(
+      (guardrail) => guardrail.id === "no-fabricated-headline",
+    ),
   };
 
   const contextPreview = JSON.stringify({
-    taskId: ARENA_TASK.id,
+    taskId: task.id,
+    instruction: task.instruction,
     rules: config.rules.map((rule) => rule.id),
-    priorFailure: config.contextPolicy.retainFailureEvidence ? context.priorFailure : null,
+    priorFailure: config.contextPolicy.retainFailureEvidence
+      ? context.priorFailure
+      : null,
   }).slice(0, config.contextPolicy.maxContextChars);
 
-  const retainedFailure = config.contextPolicy.retainFailureEvidence && context.priorFailure !== null;
+  const retainedFailure =
+    config.contextPolicy.retainFailureEvidence && context.priorFailure !== null;
 
-  const finish = (patch: Partial<NovaRun> & Pick<NovaRun, "ok" | "invoked">): NovaRun => ({
+  const finish = (
+    patch: Partial<NovaRun> & Pick<NovaRun, "ok" | "invoked">,
+  ): NovaRun => ({
     ...base,
     toolName: null,
     durationMs: Date.now() - started,
@@ -48,7 +67,9 @@ export async function executeNova(
     });
   }
 
-  const enabled = config.tools.filter((tool) => tool.enabled && tool.purpose === "fetch_brief");
+  const enabled = config.tools.filter(
+    (tool) => tool.enabled && tool.purpose === "fetch_brief",
+  );
   if (enabled.length !== 1) {
     return finish({
       ok: false,
@@ -59,7 +80,9 @@ export async function executeNova(
   }
 
   const binding = enabled[0];
-  const namedFallback = config.rules.find((rule) => rule.id === "name-the-fallback");
+  const namedFallback = config.rules.find(
+    (rule) => rule.id === "name-the-fallback",
+  );
   if (namedFallback && !namedFallback.text.includes(binding.name)) {
     return finish({
       ok: false,
@@ -82,8 +105,10 @@ export async function executeNova(
   }
 
   try {
-    const output = await implementation.invoke({ taskId: ARENA_TASK.id });
-    const headlineOnly = config.rules.some((rule) => rule.id === "headline-only");
+    const output = await implementation.invoke({ taskId: task.id });
+    const headlineOnly = config.rules.some(
+      (rule) => rule.id === "headline-only",
+    );
     return finish({
       ok: true,
       invoked: true,

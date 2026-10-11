@@ -1,16 +1,16 @@
 # Oops, We Evolved!
 
-A self-improving agent harness. NOVA runs a task, a configured tool really throws, GLITCH records that failure, MORPH proposes a new harness, ATLAS tests it, and the approved version is what the next run loads.
+A self-improving agent harness. the agent runs a task, a configured tool really throws, Raindrop evidence records that failure, MORPH proposes a new harness, requirements verification tests it, and the approved version is what the next run loads.
 
 ## The cycle
 
-1. **NOVA** executes “retrieve the arena status brief” with harness v1.
+1. **the agent** executes “retrieve the arena status brief” with harness v1.
 2. **orbital_uplink** is invoked and throws `ToolUnavailableError`. The executor does not skip the call or swap tools on its own.
-3. **GLITCH** captures that throw as one Raindrop failure event: a tool span (`name`, `input`, `error`, `durationMs`) and a `selfDiagnose` diagnostic (`eventId`, `description`, `category`, `source`, `sentiment`). The diagnosis is read from that event. With `RAINDROP_API_KEY` or `RAINDROP_WRITE_KEY`, the official `raindrop-ai` SDK sends the same event (`begin` → `trackTool({ error })` → `selfDiagnose` → `finish`). With no key, a local adapter returns that event and nothing is sent. Diagnosis is never skipped.
-4. **MORPH** cites that event (id, span, error) as the reason it disables the span's tool, enables the other available `fetch_brief` tool, names that fallback in a rule, adds the live-fallback guardrail, and retains the failure in context. An OpenAI model may write the proposal when `OPENAI_API_KEY` is set. The cause is still copied from the Raindrop event. A deterministic proposer covers the demo.
-5. **ATLAS** reruns the task and accepts the proposal only when the mutation cites that same event and the rerun no longer throws the span's error.
+3. **Raindrop evidence** captures that throw as one Raindrop failure event: a tool span (`name`, `input`, `error`, `durationMs`) and a `selfDiagnose` diagnostic (`eventId`, `description`, `category`, `source`, `sentiment`). The diagnosis is read from that event. With `RAINDROP_API_KEY` or `RAINDROP_WRITE_KEY`, the official `raindrop-ai` SDK sends the same event (`begin` → `trackTool({ error })` → `selfDiagnose` → `finish`). With no key, a local adapter returns that event and nothing is sent. Diagnosis is never skipped.
+4. **Harness repair** cites that event (id, span, error) as the reason it disables the span's tool, enables the other available `fetch_brief` tool, names that fallback in a rule, adds the live-fallback guardrail, and retains the failure in context. An OpenAI model may write the proposal when `OPENAI_API_KEY` is set. The cause is still copied from the Raindrop event. A deterministic proposer covers the demo.
+5. **requirements verification** reruns the task and accepts the proposal only when the mutation cites that same event and the rerun no longer throws the span's error and returns the expected headline.
 6. The approved version is stored in MongoDB Atlas when `MONGODB_URI` is set, otherwise in `data/harness-versions.json`.
-7. **NOVA** loads that version in a fresh read and returns `GROUND ARCHIVE // ARENA NOMINAL`.
+7. **the agent** loads that version in a fresh read and returns `GROUND ARCHIVE // ARENA NOMINAL`.
 
 ## Run it
 
@@ -21,9 +21,9 @@ npm run cycle
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to operate **MORPH LAB**, the interactive isometric infrastructure control room. Choose **Primary outage** or **Corrupt fallback** and press **Run Mission** to execute the real harness. Recorded results replay through six stages; zoom, pan, pause, step, inspect evidence and compare the configuration changes. **Replay Execution** and **Reset View** never call the backend. See [MORPH-LAB.md](MORPH-LAB.md) for controls, verification and the short demo sequence.
+Open [http://localhost:3000](http://localhost:3000) to operate **Oops, We Evolved!**, the interactive 3D infrastructure control room. Enter your incident brief, choose **Primary outage** or **Corrupt fallback** and press **Run Mission** to execute the real harness. Recorded results replay through six stages; zoom, pan, pause, step, inspect evidence and compare the configuration changes. **Replay Execution** and **Reset View** never call the backend. See [MORPH-LAB.md](MORPH-LAB.md) for controls, verification and the short demo sequence.
 
-`npm run cycle` prints the same report as JSON. Exit code is 0 when the second NOVA run succeeds.
+`npm run cycle` prints the same report as JSON. Exit code is 0 when the second the agent run succeeds.
 
 Copy `.env.example` to `.env.local` only if you want Atlas, Raindrop, or OpenAI. The cycle, the tests, and the UI all run with no keys.
 
@@ -40,7 +40,7 @@ Copy `.env.example` to `.env.local` only if you want Atlas, Raindrop, or OpenAI.
 
 ## Tests
 
-`npm test` runs the cycle with a temp file store and the local Raindrop adapter. It does not use the network or any API key. It checks that v1 throws from a real `orbital_uplink` call, GLITCH diagnoses that Raindrop span, MORPH's tool swap cites the span (including a decoy span that is not `orbital_uplink`), ATLAS rejects a proposal that ignores the span or still enables it, a second store instance loads version 2, and the rerun no longer throws that error.
+`npm test` runs the cycle with a temp file store and the local Raindrop adapter. It does not use the network or any API key. It checks that v1 throws from a real `orbital_uplink` call, Raindrop evidence diagnoses that Raindrop span, the repair’s tool swap cites the span (including a decoy span that is not `orbital_uplink`), requirements verification rejects a proposal that ignores the span or still enables it, a second store instance loads version 2, and the rerun no longer throws that error.
 
 ## Browser verification
 

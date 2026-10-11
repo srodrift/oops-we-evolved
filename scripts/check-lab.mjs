@@ -10,6 +10,7 @@ const outputDir = process.env.MORPH_CAPTURE_DIR;
 if (outputDir) await mkdir(outputDir, { recursive: true });
 const browser = await chromium.launch({
   headless: true,
+  args: ["--enable-unsafe-swiftshader"],
   ...(process.env.MORPH_BROWSER_PATH
     ? { executablePath: process.env.MORPH_BROWSER_PATH }
     : {}),
@@ -32,8 +33,28 @@ try {
   const stage = (index) => page.locator(".stages button").nth(index).click();
   await page.goto(baseURL);
   await page
-    .getByRole("heading", { name: "Failure is the beginning." })
+    .getByRole("heading", { name: "Broken tools. Verified recovery." })
     .waitFor();
+  await page
+    .locator('.scene-canvas[data-render-mode="webgl"] canvas')
+    .waitFor();
+  const canvas = page.locator(".scene-canvas canvas");
+  const cameraBefore = await canvas.getAttribute("data-orbit");
+  await page.getByRole("button", { name: "Rotate right", exact: true }).click();
+  await page.waitForTimeout(300);
+  assert.notEqual(await canvas.getAttribute("data-orbit"), cameraBefore);
+  const rotated = await canvas.getAttribute("data-orbit");
+  await page.getByRole("button", { name: "Zoom in 3D", exact: true }).click();
+  await page.waitForTimeout(300);
+  assert.notEqual(await canvas.getAttribute("data-orbit"), rotated);
+  await page.getByRole("button", { name: "Fit 3D scene", exact: true }).click();
+  await page
+    .locator("#source-brief")
+    .fill(
+      "OPERATOR SF-104 // BACKUP VERIFIED\nThis source was supplied by the person operating the demo.",
+    );
+  await capture("morph-lab-3d-ready.png");
+  await page.getByRole("button", { name: "Blueprint", exact: true }).click();
   await capture("morph-lab-ready.png");
   assert.equal(
     await page.getByRole("button", { name: "Replay Execution" }).isEnabled(),
@@ -71,13 +92,20 @@ try {
   await page.getByRole("button", { name: /Run Mission/ }).click();
   const report = await (await responsePromise).json();
   assert.equal(report.scenario, "primary-outage");
+  assert.equal(
+    report.task.expectedHeadline,
+    "OPERATOR SF-104 // BACKUP VERIFIED",
+  );
+  assert.equal(
+    report.steps.find((step) => step.index === 7).evidence.headline,
+    "OPERATOR SF-104 // BACKUP VERIFIED",
+  );
+  assert.equal(report.input.source, "operator");
   assert.ok(report.approvedVersion);
   assert.equal(report.steps.find((step) => step.index === 6).status, "saved");
   await page.getByRole("button", { name: "Ⅱ Pause", exact: true }).click();
   await stage(2);
-  await page
-    .getByRole("heading", { name: "GLITCH / RAINDROP", exact: true })
-    .waitFor();
+  await page.getByRole("heading", { name: "RAINDROP", exact: true }).waitFor();
   assert.equal(
     await page.locator(".inline-event-id").textContent(),
     report.steps.find((step) => step.index === 3).evidence.raindrop.eventId,
@@ -120,6 +148,12 @@ try {
     .getByText("Recovery verified", { exact: true })
     .waitFor({ timeout: 20000 });
   await capture("morph-lab-recovered.png");
+  await page.getByRole("button", { name: "3D Orbit", exact: true }).click();
+  await page
+    .locator('.scene-canvas[data-render-mode="webgl"] canvas')
+    .waitFor();
+  await capture("morph-lab-3d-recovered.png");
+  await page.getByRole("button", { name: "Blueprint", exact: true }).click();
   await page.getByRole("button", { name: /Inspect Evidence/ }).click();
   await page.getByRole("dialog").waitFor();
   await capture("morph-lab-evidence.png");
@@ -160,7 +194,7 @@ try {
   await page.locator("#experiment").selectOption("corrupt-archive");
   await page
     .getByText(
-      "Showing the previous experiment. Run Mission to apply this selection.",
+      "Input changed. Run Mission to execute this brief and fault; the map still shows the previous report.",
     )
     .waitFor();
   const rejectPromise = page.waitForResponse((response) =>
@@ -186,6 +220,12 @@ try {
   );
   assert.equal(await page.locator(".route-recovered").count(), 0);
   await capture("morph-lab-rejected.png");
+  await page.getByRole("button", { name: "3D Orbit", exact: true }).click();
+  await page
+    .locator('.scene-canvas[data-render-mode="webgl"] canvas')
+    .waitFor();
+  await capture("morph-lab-3d-rejected.png");
+  await page.getByRole("button", { name: "Blueprint", exact: true }).click();
   await page.getByRole("button", { name: "World", exact: true }).click();
   await page
     .getByAltText("Original Spark artwork before verified recovery")
@@ -230,7 +270,7 @@ try {
   );
   assert.deepEqual(errors, []);
   console.log(
-    "MORPH LAB browser checks passed: real recovery/rejection, replay isolation, camera, packet pause, reduced motion, evidence export, keyboard, mobile and HTTP error handling.",
+    "Oops, We Evolved! browser checks passed: real recovery/rejection, replay isolation, camera, packet pause, reduced motion, evidence export, keyboard, mobile and HTTP error handling.",
   );
 } finally {
   await browser.close();

@@ -19,7 +19,7 @@ const newsreader = Newsreader({
 });
 
 export const metadata: Metadata = {
-  title: "MORPH LAB — Oops, We Evolved!",
+  title: "Oops, We Evolved!",
   description:
     "A self-improving agent harness that swaps a dead tool for a working one after a real failure.",
 };

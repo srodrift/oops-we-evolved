@@ -8,12 +8,12 @@ import { randomUUID } from "node:crypto";
  * `Raindrop.selfDiagnose` sends (`eventId`, `description`, `category`,
  * `source`, `sentiment`, `properties`). The SDK does not return this payload,
  * so the local adapter and the live client both return the event they send.
- * GLITCH diagnoses from this object only.
+ * Failure diagnosis diagnoses from this object only.
  */
 export type RaindropFailureEvent = {
   eventId: string;
-  event: "glitch_investigation";
-  userId: "morph-glitch";
+  event: "tool_failure_investigation";
+  userId: "agent-harness";
   convoId: string;
   input: string;
   properties: Record<string, string>;
@@ -28,7 +28,7 @@ export type RaindropFailureEvent = {
     eventId: string;
     description: string;
     category: "tool_failure";
-    source: "GLITCH";
+    source: "Agent Harness";
     sentiment: "NEGATIVE";
     properties: {
       tool: string;
@@ -63,20 +63,25 @@ export type CapturedThrow = {
   taskId: string;
 };
 
-export function buildFailureEvent(thrown: CapturedThrow, delivered = false): RaindropFailureEvent {
+export function buildFailureEvent(
+  thrown: CapturedThrow,
+  delivered = false,
+): RaindropFailureEvent {
   if (!thrown.toolName || !thrown.errorName || !thrown.errorMessage) {
-    throw new Error("A Raindrop failure event needs the tool name and the thrown error.");
+    throw new Error(
+      "A Raindrop failure event needs the tool name and the thrown error.",
+    );
   }
   const eventId = randomUUID();
   const description = `Tool span ${thrown.toolName} failed: ${thrown.errorName}: ${thrown.errorMessage}`;
   return {
     eventId,
-    event: "glitch_investigation",
-    userId: "morph-glitch",
+    event: "tool_failure_investigation",
+    userId: "agent-harness",
     convoId: `morph-${eventId}`,
     input: description,
     properties: {
-      actor: "GLITCH",
+      actor: "Agent Harness",
       harness: "morph",
       tool: thrown.toolName,
       error_name: thrown.errorName,
@@ -86,13 +91,13 @@ export function buildFailureEvent(thrown: CapturedThrow, delivered = false): Rai
       input: { taskId: thrown.taskId, invoked: true },
       error: { name: thrown.errorName, message: thrown.errorMessage },
       durationMs: thrown.durationMs,
-      properties: { stage: "nova_execution", actor: "NOVA" },
+      properties: { stage: "nova_execution", actor: "Agent" },
     },
     diagnostic: {
       eventId,
       description,
       category: "tool_failure",
-      source: "GLITCH",
+      source: "Agent Harness",
       sentiment: "NEGATIVE",
       properties: {
         tool: thrown.toolName,
@@ -104,7 +109,9 @@ export function buildFailureEvent(thrown: CapturedThrow, delivered = false): Rai
   };
 }
 
-export function diagnoseFromEvidence(evidence: RaindropFailureEvent): Diagnosis {
+export function diagnoseFromEvidence(
+  evidence: RaindropFailureEvent,
+): Diagnosis {
   const tool = evidence.span.name;
   const errorName = evidence.span.error.name;
   const errorMessage = evidence.span.error.message;

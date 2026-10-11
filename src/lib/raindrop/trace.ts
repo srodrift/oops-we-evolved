@@ -6,7 +6,9 @@ export type RaindropClient = {
   capture(run: NovaRun): Promise<RaindropFailureEvent>;
 };
 
-export function readRaindropWriteKey(env: NodeJS.ProcessEnv = process.env): string | undefined {
+export function readRaindropWriteKey(
+  env: NodeJS.ProcessEnv = process.env,
+): string | undefined {
   const apiKey = env.RAINDROP_API_KEY?.trim();
   if (apiKey) {
     return apiKey;
@@ -15,7 +17,9 @@ export function readRaindropWriteKey(env: NodeJS.ProcessEnv = process.env): stri
   return writeKey || undefined;
 }
 
-export function createRaindropClient(env: NodeJS.ProcessEnv = process.env): RaindropClient {
+export function createRaindropClient(
+  env: NodeJS.ProcessEnv = process.env,
+): RaindropClient {
   const writeKey = readRaindropWriteKey(env);
   if (!writeKey) {
     return createLocalRaindropClient();
@@ -39,7 +43,10 @@ function createLiveRaindropClient(writeKey: string): RaindropClient {
         await deliver(writeKey, event);
         return event;
       } catch (error) {
-        const message = redactSecrets(error instanceof Error ? error.message : String(error), [writeKey]);
+        const message = redactSecrets(
+          error instanceof Error ? error.message : String(error),
+          [writeKey],
+        );
         return { ...event, delivered: false, sendError: message };
       }
     },
@@ -47,8 +54,16 @@ function createLiveRaindropClient(writeKey: string): RaindropClient {
 }
 
 function throwFromRun(run: NovaRun) {
-  if (run.ok || !run.invoked || !run.toolName || !run.errorName || !run.errorMessage) {
-    throw new Error("Raindrop capture requires a tool that was invoked and threw.");
+  if (
+    run.ok ||
+    !run.invoked ||
+    !run.toolName ||
+    !run.errorName ||
+    !run.errorMessage
+  ) {
+    throw new Error(
+      "Raindrop capture requires a tool that was invoked and threw.",
+    );
   }
   return {
     toolName: run.toolName,
@@ -59,7 +74,10 @@ function throwFromRun(run: NovaRun) {
   };
 }
 
-async function deliver(writeKey: string, event: RaindropFailureEvent): Promise<void> {
+async function deliver(
+  writeKey: string,
+  event: RaindropFailureEvent,
+): Promise<void> {
   const { Raindrop } = await import("raindrop-ai");
   const client = new Raindrop({
     writeKey,
