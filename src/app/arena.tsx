@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
-import { toBoard, type HarnessColumn } from "@/lib/harness/board";
-import { ARENA_TASK, type HarnessConfig } from "@/lib/harness/types";
-import type { CycleReport } from "@/lib/harness/types";
+import { useState } from "react";
+import { toBoard, type Board, type HarnessColumn } from "@/lib/harness/board";
+import { ARENA_TASK, type CycleReport, type HarnessConfig } from "@/lib/harness/types";
+
+const STORY =
+  "An agent had one allowed tool. That tool died. The failure was recorded, the harness retired the dead tool, saved the new rules, and finished the job with the working tool.";
 
 export function Arena({ seed }: { seed: HarnessConfig }) {
   const [report, setReport] = useState<CycleReport | null>(null);
@@ -28,146 +30,127 @@ export function Arena({ seed }: { seed: HarnessConfig }) {
     }
   }
 
+  const outcome = board.ran ? readOutcome(board) : null;
+
   return (
-    <main className="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-3 px-4 py-3 sm:px-6">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="text-sm font-bold tracking-[0.28em] text-morph">GLITCH THEORY</p>
-          <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">Oops, We Evolved!</h1>
-          <p className="max-w-3xl text-lg text-foreground">{ARENA_TASK.instruction}</p>
+    <main className="mx-auto flex w-full max-w-[1120px] flex-1 flex-col px-8 py-16 sm:px-12 lg:px-16 lg:py-20">
+      <p className="text-xs font-medium tracking-[0.28em] text-muted uppercase">Glitch Theory</p>
+      <div className="mt-8 flex flex-col gap-10 lg:flex-row lg:items-end lg:justify-between">
+        <div className="max-w-[40rem]">
+          <h1 className="font-serif text-5xl leading-[0.95] font-medium tracking-tight sm:text-7xl">Oops, We Evolved!</h1>
+          <p className="mt-8 font-serif text-2xl leading-snug text-foreground italic sm:text-[1.7rem]">{STORY}</p>
         </div>
-        <div className="flex flex-col items-stretch gap-1 sm:items-end">
+        <div className="flex shrink-0 flex-col items-start gap-3 lg:items-end">
           <button
             type="button"
             onClick={runCycle}
             disabled={running}
-            className="h-14 min-w-40 bg-atlas px-8 text-2xl font-bold text-black disabled:opacity-60"
+            className="h-14 bg-accent px-10 text-lg font-semibold tracking-wide text-black disabled:opacity-60"
           >
             {running ? "Running" : "Run"}
           </button>
-          <p className="text-sm text-muted">No API keys required.</p>
+          <p className="text-sm text-muted">No keys required.</p>
         </div>
-      </header>
-
-      {error ? <p className="bg-fail px-4 py-2 text-lg font-semibold text-black">{error}</p> : null}
-      {board.banner ? <p className="bg-foreground px-4 py-2 text-lg font-semibold text-black">{board.banner}</p> : null}
-
-      <div className="grid gap-3 lg:grid-cols-2">
-        <Stage name="NOVA" tone="nova">
-          <p className="text-lg">{board.nova.call ?? board.nova.waiting}</p>
-          {board.nova.errorName ? (
-            <div className="mt-2 border-2 border-fail bg-black/40 p-2">
-              <p className="font-mono text-2xl font-bold text-fail">{board.nova.errorName}</p>
-              <p className="mt-1 font-mono text-lg leading-snug">{board.nova.errorMessage}</p>
-              <p className="mt-2 text-base font-semibold">Invoked: {board.nova.invoked ? "yes" : "no"}</p>
-            </div>
-          ) : null}
-          {board.nova.rerun ? <p className="mt-2 text-lg font-semibold text-atlas">{board.nova.rerun}</p> : null}
-        </Stage>
-
-        <Stage name="GLITCH" tone="glitch">
-          <p className="text-lg leading-snug">{board.glitch.summary ?? board.glitch.waiting}</p>
-          {board.glitch.raindrop ? <p className="mt-2 text-lg font-semibold">{board.glitch.raindrop}</p> : null}
-        </Stage>
-
-        <Stage name="MORPH" tone="morph">
-          <p className="text-lg">
-            {board.morph.proposer ? `${board.morph.proposer} ${board.morph.rationale ?? ""}` : board.morph.waiting}
-          </p>
-          <div className="mt-2 grid gap-2 sm:grid-cols-2">
-            <HarnessPane column={board.morph.v1} />
-            {board.morph.v2 ? (
-              <HarnessPane column={board.morph.v2} approved={board.morph.v2State === "approved"} />
-            ) : (
-              <div className="border border-dashed border-morph/60 p-3 text-base text-muted">No approved harness yet.</div>
-            )}
-          </div>
-        </Stage>
-
-        <Stage name="ATLAS" tone="atlas">
-          {board.atlas.verdict ? (
-            <>
-              <p className="text-3xl font-bold">{board.atlas.verdict}</p>
-              <p className="text-lg">
-                {board.atlas.passed} passed, {board.atlas.failed} failed.
-              </p>
-              {board.atlas.saved ? <p className="text-lg font-semibold">{board.atlas.saved}</p> : null}
-              {board.atlas.resolution ? <p className="text-base leading-snug">{board.atlas.resolution}</p> : null}
-              <ul className="mt-2 grid gap-x-4 gap-y-1 sm:grid-cols-2 xl:grid-cols-4">
-                {board.atlas.tests.map((item) => (
-                  <li key={item.label} className="flex items-start gap-2 text-base leading-snug">
-                    <span className={item.passed ? "font-bold text-atlas" : "font-bold text-fail"}>
-                      {item.passed ? "PASS" : "FAIL"}
-                    </span>
-                    <span>{item.label}</span>
-                  </li>
-                ))}
-              </ul>
-            </>
-          ) : (
-            <p className="text-lg">{board.atlas.waiting}</p>
-          )}
-        </Stage>
       </div>
+
+      {error ? <p className="mt-10 text-base text-fail">{error}</p> : null}
+
+      {outcome ? (
+        <section className="mt-20 border-t border-line pt-12">
+          <div className="grid items-start gap-10 md:grid-cols-[1fr_auto_1fr] md:gap-8">
+            <ToolSide label="Before" name={outcome.deadTool} state="Off" />
+            <p className="hidden pt-10 font-serif text-4xl text-muted md:block" aria-hidden="true">
+              →
+            </p>
+            <ToolSide label="After" name={outcome.workingTool} state="On" done={outcome.headline} />
+          </div>
+          <dl className="mt-16 grid gap-8 border-t border-line pt-8 sm:grid-cols-2">
+            <div>
+              <dt className="text-xs tracking-[0.22em] text-muted uppercase">Raindrop</dt>
+              <dd className="mt-2 font-mono text-sm text-foreground">{outcome.eventId ?? "Not recorded"}</dd>
+            </div>
+            <div>
+              <dt className="text-xs tracking-[0.22em] text-muted uppercase">Atlas</dt>
+              <dd className="mt-2 text-sm text-foreground">{outcome.atlasVersion ? `Version ${outcome.atlasVersion}` : "Not saved"}</dd>
+            </div>
+          </dl>
+        </section>
+      ) : (
+        <p className="mt-20 border-t border-line pt-10 text-base text-muted">Press Run. The before and after appear here.</p>
+      )}
     </main>
   );
 }
 
-function Stage({
+function ToolSide({
+  label,
   name,
-  tone,
-  children,
+  state,
+  done,
 }: {
-  name: "NOVA" | "GLITCH" | "MORPH" | "ATLAS";
-  tone: "nova" | "glitch" | "morph" | "atlas";
-  children: ReactNode;
+  label: string;
+  name: string | null;
+  state: "Off" | "On";
+  done?: string | null;
 }) {
-  const frame = {
-    nova: "border-nova bg-nova-bg",
-    glitch: "border-glitch bg-glitch-bg",
-    morph: "border-morph bg-morph-bg",
-    atlas: "border-atlas bg-atlas-bg",
-  }[tone];
-  const chip = {
-    nova: "bg-nova",
-    glitch: "bg-glitch",
-    morph: "bg-morph",
-    atlas: "bg-atlas",
-  }[tone];
-
   return (
-    <section className={`border-2 p-3 ${frame}`}>
-      <h2 className={`inline-block px-3 py-0.5 text-xl font-bold text-black ${chip}`}>{name}</h2>
-      <div className="mt-2">{children}</div>
-    </section>
+    <div>
+      <p className="text-xs tracking-[0.22em] text-muted uppercase">{label}</p>
+      <p className="mt-4 font-serif text-4xl leading-none tracking-tight">{name ?? "—"}</p>
+      <p className={`mt-4 text-sm font-semibold tracking-[0.18em] uppercase ${state === "On" ? "text-accent" : "text-muted"}`}>{state}</p>
+      {done ? (
+        <p className="mt-8 max-w-sm text-base leading-relaxed text-foreground">
+          Job done. <span className="text-muted">{done}</span>
+        </p>
+      ) : null}
+    </div>
   );
 }
 
-function HarnessPane({ column, approved = false }: { column: HarnessColumn; approved?: boolean }) {
-  return (
-    <div className={`border p-2 ${approved ? "border-atlas" : "border-white/20"}`}>
-      <p className="text-base font-bold">{column.versionLabel}</p>
-      <p className="mt-2 text-sm font-bold tracking-wide text-muted">TOOLS</p>
-      <ul className="mt-1 space-y-0.5">
-        {column.tools.map((tool) => (
-          <li key={tool.name} className="flex items-center justify-between gap-2 font-mono text-base">
-            <span>{tool.name}</span>
-            <span className={tool.enabled ? "font-bold text-atlas" : "text-muted"}>{tool.enabled ? "ON" : "OFF"}</span>
-          </li>
-        ))}
-      </ul>
-      <p className="mt-2 text-sm font-bold tracking-wide text-muted">RULES</p>
-      <ul className="mt-1 space-y-0.5 text-base leading-tight">
-        {column.rules.map((rule) => (
-          <li key={rule.id}>{rule.text}</li>
-        ))}
-      </ul>
-      <p className="mt-2 text-sm font-bold tracking-wide text-muted">GUARDRAILS</p>
-      <ul className="mt-1 space-y-0.5 text-base leading-tight">
-        {column.guardrails.map((guardrail) => (
-          <li key={guardrail.id}>{guardrail.text}</li>
-        ))}
-      </ul>
-    </div>
-  );
+function readOutcome(board: Board): {
+  deadTool: string | null;
+  workingTool: string | null;
+  headline: string | null;
+  eventId: string | null;
+  atlasVersion: string | null;
+} {
+  const before = enabledTool(board.morph.v1);
+  const after = board.morph.v2 ? enabledTool(board.morph.v2) : null;
+  return {
+    deadTool: before,
+    workingTool: after,
+    headline: headlineFrom(board.nova.rerun),
+    eventId: eventIdFrom(board.glitch.raindrop),
+    atlasVersion: versionFrom(board.morph.v2?.versionLabel ?? null) ?? versionFrom(board.atlas.saved),
+  };
+}
+
+function enabledTool(column: HarnessColumn): string | null {
+  return column.tools.find((tool) => tool.enabled)?.name ?? column.tools[0]?.name ?? null;
+}
+
+function headlineFrom(rerun: string | null): string | null {
+  if (!rerun) {
+    return null;
+  }
+  if (rerun.includes(ARENA_TASK.expectedHeadline)) {
+    return ARENA_TASK.expectedHeadline;
+  }
+  const marker = "returned ";
+  const index = rerun.lastIndexOf(marker);
+  if (index === -1) {
+    return null;
+  }
+  const headline = rerun.slice(index + marker.length).replace(/\.$/, "").trim();
+  return headline.length > 0 ? headline : null;
+}
+
+function eventIdFrom(raindrop: string | null): string | null {
+  const match = raindrop?.match(/Event ([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i);
+  return match?.[1] ?? null;
+}
+
+function versionFrom(value: string | null): string | null {
+  const match = value?.match(/v(?:ersion )?(\d+)/i);
+  return match?.[1] ?? null;
 }
