@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "tsx --test src/lib/harness/*.test.ts",
-    "cycle": "tsx scripts/run-cycle.ts"
+    "cycle": "tsx scripts/run-cycle.ts",
+    "test:browser": "node scripts/check-lab.mjs"
   },
   "dependencies": {
     "mongodb": "^7.7.0",
@@ -25,6 +26,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.4.0",
+    "playwright": "^1.62.1",
     "tailwindcss": "^4",
     "tsx": "^4.23.15",
     "typescript": "^5"

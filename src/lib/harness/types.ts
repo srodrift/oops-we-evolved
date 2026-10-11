@@ -125,6 +125,7 @@ export type CycleStep = {
 export type StoreKind = "memory" | "file" | "mongodb";
 
 export type CycleReport = {
+  scenario?: "primary-outage" | "corrupt-archive";
   task: typeof ARENA_TASK;
   store: StoreKind;
   approvedVersion: number | null;

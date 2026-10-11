@@ -61,7 +61,7 @@ const TEST_LABELS: Record<string, string> = {
   "headline-only": "Returns the headline only",
   "one-enabled-fetch-tool": "Exactly one fetch tool is on",
   "fallback-is-available": "That tool is available",
-  "execution-succeeds": "Live rerun succeeded",
+  "execution-succeeds": "Fallback tool invocation succeeded",
   "headline-matches": "Headline matches the archive",
   "context-retained-failure": "Rerun context kept the failure",
   "context-within-policy": "Context stayed inside the size cap",
