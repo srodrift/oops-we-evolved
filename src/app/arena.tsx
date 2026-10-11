@@ -46,12 +46,14 @@ export function Arena({ seed }: { seed: HarnessConfig }) {
 
   return (
     <main className="arena-root">
+      <div className="arena-stars" />
       <div className="arena-beam" />
+      <div className="arena-beam-b" />
       <div className="arena-floor" />
       <header className="relative z-20 flex items-center justify-between gap-6 px-8 pt-6">
         <div>
           <p className="text-xs font-medium tracking-[0.28em] text-muted uppercase">Glitch Theory</p>
-          <h1 className="font-serif text-4xl leading-none tracking-tight">Oops, We Evolved!</h1>
+          <h1 className="arena-title font-serif text-5xl leading-none tracking-tight">Oops, We Evolved!</h1>
         </div>
         <button
           type="button"
@@ -67,7 +69,7 @@ export function Arena({ seed }: { seed: HarnessConfig }) {
         <div className="flex h-full items-center justify-center">
           {showGlitch ? (
             <Cast name="GLITCH" tone="text-glitch" line={glitchLine} className="cast-arrive">
-              <div className="h-64 w-64">
+              <div className="cast-art h-64 w-64">
                 <GlitchFox />
               </div>
             </Cast>
@@ -76,7 +78,7 @@ export function Arena({ seed }: { seed: HarnessConfig }) {
 
         <div className="flex h-full flex-col items-center justify-center" data-nova-form={evolved ? "pulse" : "spark"}>
           <Cast name="NOVA" tone="text-nova" line={novaLine} form={evolved ? "pulse" : "spark"}>
-            <div className={`nova-bob relative h-96 w-96 ${evolved ? "is-evolved" : ""}`}>
+            <div className={`nova-bob cast-art relative h-80 w-80 ${evolved ? "is-evolved" : ""}`}>
               <div className="nova-spark">
                 <NovaSpark />
               </div>
@@ -91,14 +93,14 @@ export function Arena({ seed }: { seed: HarnessConfig }) {
         <div className="flex h-full flex-col items-center justify-center gap-1">
           {showMorph ? (
             <Cast name="MORPH" tone="text-morph" line={morphLine} className="cast-arrive cast-morph">
-              <div className="h-48 w-48">
+              <div className="cast-art h-44 w-44">
                 <MorphCreature />
               </div>
             </Cast>
           ) : null}
           {showAtlas ? (
             <Cast name="ATLAS" tone="text-atlas" line={atlasLine} className="cast-arrive cast-atlas">
-              <div className="h-48 w-48">
+              <div className="cast-art h-44 w-44">
                 <AtlasGuardian />
               </div>
             </Cast>
@@ -155,8 +157,8 @@ function Cast({
     <figure className={`flex max-w-xs flex-col items-center text-center ${className ?? ""}`} data-voice-character={name} data-voice-text={line} data-voice-form={form}>
       {children}
       <figcaption className="mt-1">
-        <p className={`text-xs font-semibold tracking-[0.22em] uppercase ${tone}`}>{name}</p>
-        <p className="mt-1 text-sm leading-snug text-foreground">{line}</p>
+        <p className={`font-serif text-sm tracking-[0.22em] uppercase ${tone}`}>{name}</p>
+        <p className="mt-1 max-w-[16rem] font-serif text-base leading-snug text-foreground italic">{line}</p>
       </figcaption>
     </figure>
   );
