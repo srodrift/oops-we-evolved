@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+:root {
+  --background: #070b14;
+  --foreground: #f6f3ea;
+  --muted: #b7b3a6;
+  --fail: #ff5d6c;
+  --nova: #39e7ff;
+  --glitch: #ff4f9a;
+  --morph: #ffc14a;
+  --atlas: #c6f54a;
+  --nova-bg: #06242e;
+  --glitch-bg: #2a1020;
+  --morph-bg: #2a1c08;
+  --atlas-bg: #14240c;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-fail: var(--fail);
+  --color-nova: var(--nova);
+  --color-glitch: var(--glitch);
+  --color-morph: var(--morph);
+  --color-atlas: var(--atlas);
+  --color-nova-bg: var(--nova-bg);
+  --color-glitch-bg: var(--glitch-bg);
+  --color-morph-bg: var(--morph-bg);
+  --color-atlas-bg: var(--atlas-bg);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background-color: var(--background);
+  background-image:
+    linear-gradient(rgba(246, 243, 234, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(246, 243, 234, 0.035) 1px, transparent 1px);
+  background-size: 40px 40px;
+  color: var(--foreground);
+  font-family: var(--font-sans), sans-serif;
+}
