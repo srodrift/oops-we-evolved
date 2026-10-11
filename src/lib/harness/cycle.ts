@@ -4,10 +4,15 @@ import { proposeHarness } from "./morph";
 import { executeNova } from "./nova";
 import { seedConfig } from "./seed";
 import type { HarnessStore } from "./store";
-import { catalogFromRegistry, createDefaultRegistry, type ToolRegistry } from "./tools";
+import {
+  catalogFromRegistry,
+  createDefaultRegistry,
+  type ToolRegistry,
+} from "./tools";
 import {
   ARENA_TASK,
   toHarnessConfig,
+  type MissionTask,
   type CycleReport,
   type CycleStep,
   type HarnessConfig,
@@ -16,6 +21,7 @@ import {
 import { createRaindropClient, type RaindropClient } from "../raindrop/trace";
 
 export type CycleOptions = {
+  task?: MissionTask;
   registry?: ToolRegistry;
   store?: HarnessStore;
   raindrop?: RaindropClient;
@@ -23,29 +29,37 @@ export type CycleOptions = {
   parent?: HarnessConfig;
 };
 
-export async function runEvolutionCycle(options: CycleOptions = {}): Promise<CycleReport> {
+export async function runEvolutionCycle(
+  options: CycleOptions = {},
+): Promise<CycleReport> {
+  const task = options.task ?? ARENA_TASK;
   const registry = options.registry ?? createDefaultRegistry();
   const store = options.store;
   if (!store) {
-    throw new Error("runEvolutionCycle requires a store. Use createDefaultStore() at the boundary.");
+    throw new Error(
+      "runEvolutionCycle requires a store. Use createDefaultStore() at the boundary.",
+    );
   }
   const raindrop = options.raindrop ?? createRaindropClient();
   const parent = options.parent ?? seedConfig();
   const catalog = catalogFromRegistry(registry);
 
-  const firstRun = await executeNova(parent, registry, { priorFailure: null });
+  const firstRun = await executeNova(parent, registry, {
+    priorFailure: null,
+    task,
+  });
   const steps: CycleStep[] = [
     {
       index: 1,
-      actor: "NOVA",
+      actor: "Agent",
       title: "Execute the task with harness v1",
       status: "failure",
       detail: firstRun.ok
-        ? `NOVA unexpectedly succeeded with ${firstRun.toolName}.`
-        : `NOVA ran harness v${parent.version} and failed.`,
+        ? `The agent unexpectedly succeeded with ${firstRun.toolName}.`
+        : `The agent ran harness v${parent.version} and failed.`,
       evidence: {
         configVersion: firstRun.configVersion,
-        task: ARENA_TASK.instruction,
+        task: task.instruction,
         toolName: firstRun.toolName,
         invoked: firstRun.invoked,
         ok: firstRun.ok,
@@ -55,7 +69,7 @@ export async function runEvolutionCycle(options: CycleOptions = {}): Promise<Cyc
     },
     {
       index: 2,
-      actor: "NOVA",
+      actor: "Agent",
       title: "Unavailable tool is invoked and throws",
       status: firstRun.invoked && !firstRun.ok ? "failure" : "skipped",
       detail:
@@ -74,15 +88,27 @@ export async function runEvolutionCycle(options: CycleOptions = {}): Promise<Cyc
     },
   ];
 
-  if (firstRun.ok || !firstRun.invoked || !firstRun.toolName || !firstRun.errorName || !firstRun.errorMessage) {
-    steps.push(skippedInvestigation(), skippedProposal(), skippedAtlas(), skippedSave(store.kind), skippedRerun());
-    return { task: ARENA_TASK, store: store.kind, approvedVersion: null, steps };
+  if (
+    firstRun.ok ||
+    !firstRun.invoked ||
+    !firstRun.toolName ||
+    !firstRun.errorName ||
+    !firstRun.errorMessage
+  ) {
+    steps.push(
+      skippedInvestigation(),
+      skippedProposal(),
+      skippedAtlas(),
+      skippedSave(store.kind),
+      skippedRerun(),
+    );
+    return { task, store: store.kind, approvedVersion: null, steps };
   }
 
   const investigation = await investigateFailure(firstRun, raindrop);
   steps.push({
     index: 3,
-    actor: "GLITCH",
+    actor: "Raindrop",
     title: "Diagnose the Raindrop span",
     status: "recorded",
     detail: investigation.raindrop.delivered
@@ -107,7 +133,7 @@ export async function runEvolutionCycle(options: CycleOptions = {}): Promise<Cyc
   };
   steps.push({
     index: 4,
-    actor: "MORPH",
+    actor: "Harness Repair",
     title: `Propose harness v${proposal.version}`,
     status: "proposed",
     detail: `${draft.source === "llm" ? "LLM" : "Deterministic"} proposer: ${draft.rationale}`,
@@ -124,10 +150,15 @@ export async function runEvolutionCycle(options: CycleOptions = {}): Promise<Cyc
     },
   });
 
-  const decision = await judgeProposal(proposal, registry, investigation.raindrop);
+  const decision = await judgeProposal(
+    proposal,
+    registry,
+    investigation.raindrop,
+    task,
+  );
   steps.push({
     index: 5,
-    actor: "ATLAS",
+    actor: "Verification",
     title: "Test and accept or reject the proposal",
     status: decision.accepted ? "accepted" : "rejected",
     detail: decision.reason,
@@ -136,7 +167,7 @@ export async function runEvolutionCycle(options: CycleOptions = {}): Promise<Cyc
 
   if (!decision.accepted) {
     steps.push(skippedSave(store.kind), skippedRerun());
-    return { task: ARENA_TASK, store: store.kind, approvedVersion: null, steps };
+    return { task, store: store.kind, approvedVersion: null, steps };
   }
 
   const record: HarnessVersionRecord = {
@@ -155,7 +186,7 @@ export async function runEvolutionCycle(options: CycleOptions = {}): Promise<Cyc
   const loaded = await store.loadLatest();
   steps.push({
     index: 6,
-    actor: "ATLAS",
+    actor: "Verification",
     title: "Persist the approved harness",
     status: loaded?.version === proposal.version ? "saved" : "failure",
     detail:
@@ -164,7 +195,12 @@ export async function runEvolutionCycle(options: CycleOptions = {}): Promise<Cyc
         : "The store did not return the approved version.",
     evidence: {
       store: store.kind,
-      location: store.kind === "mongodb" ? "morph.harness_versions" : store.kind === "file" ? "data/harness-versions.json" : "memory",
+      location:
+        store.kind === "mongodb"
+          ? "morph.harness_versions"
+          : store.kind === "file"
+            ? "data/harness-versions.json"
+            : "memory",
       version: loaded?.version ?? null,
       tools: loaded?.tools ?? null,
       rules: loaded?.rules ?? null,
@@ -176,10 +212,11 @@ export async function runEvolutionCycle(options: CycleOptions = {}): Promise<Cyc
 
   if (!loaded || loaded.version !== proposal.version) {
     steps.push(skippedRerun());
-    return { task: ARENA_TASK, store: store.kind, approvedVersion: null, steps };
+    return { task, store: store.kind, approvedVersion: null, steps };
   }
 
   const second = await executeNova(toHarnessConfig(loaded), registry, {
+    task,
     priorFailure: {
       toolName: loaded.evidence.raindrop.span.name,
       errorName: loaded.evidence.raindrop.span.error.name,
@@ -188,7 +225,7 @@ export async function runEvolutionCycle(options: CycleOptions = {}): Promise<Cyc
   });
   steps.push({
     index: 7,
-    actor: "NOVA",
+    actor: "Agent",
     title: "Load the approved harness and run again",
     status: second.ok ? "success" : "failure",
     detail: second.ok
@@ -206,7 +243,7 @@ export async function runEvolutionCycle(options: CycleOptions = {}): Promise<Cyc
   });
 
   return {
-    task: ARENA_TASK,
+    task,
     store: store.kind,
     approvedVersion: second.ok ? loaded.version : null,
     steps,
@@ -226,10 +263,11 @@ function storeLabel(kind: HarnessStore["kind"]): string {
 function skippedInvestigation(): CycleStep {
   return {
     index: 3,
-    actor: "GLITCH",
+    actor: "Raindrop",
     title: "Investigate the failure",
     status: "skipped",
-    detail: "GLITCH did not run because v1 did not throw from an invoked tool.",
+    detail:
+      "Failure diagnosis did not run because v1 did not throw from an invoked tool.",
     evidence: null,
   };
 }
@@ -237,10 +275,10 @@ function skippedInvestigation(): CycleStep {
 function skippedProposal(): CycleStep {
   return {
     index: 4,
-    actor: "MORPH",
+    actor: "Harness Repair",
     title: "Propose the next harness",
     status: "skipped",
-    detail: "MORPH did not propose a change.",
+    detail: "Harness repair did not propose a change.",
     evidence: null,
   };
 }
@@ -248,10 +286,10 @@ function skippedProposal(): CycleStep {
 function skippedAtlas(): CycleStep {
   return {
     index: 5,
-    actor: "ATLAS",
+    actor: "Verification",
     title: "Test and accept or reject the proposal",
     status: "skipped",
-    detail: "ATLAS had no proposal to test.",
+    detail: "Verification had no proposal to test.",
     evidence: null,
   };
 }
@@ -259,7 +297,7 @@ function skippedAtlas(): CycleStep {
 function skippedSave(kind: HarnessStore["kind"]): CycleStep {
   return {
     index: 6,
-    actor: "ATLAS",
+    actor: "Verification",
     title: "Persist the approved harness",
     status: "skipped",
     detail: `Nothing was written to ${storeLabel(kind)}.`,
@@ -270,10 +308,10 @@ function skippedSave(kind: HarnessStore["kind"]): CycleStep {
 function skippedRerun(): CycleStep {
   return {
     index: 7,
-    actor: "NOVA",
+    actor: "Agent",
     title: "Load the approved harness and run again",
     status: "skipped",
-    detail: "NOVA did not rerun because no approved harness was saved.",
+    detail: "The agent did not rerun because no approved harness was saved.",
     evidence: null,
   };
 }

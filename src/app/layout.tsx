@@ -20,7 +20,8 @@ const newsreader = Newsreader({
 
 export const metadata: Metadata = {
   title: "Oops, We Evolved!",
-  description: "A self-improving agent harness that swaps a dead tool for a working one after a real failure.",
+  description:
+    "A self-improving agent harness that swaps a dead tool for a working one after a real failure.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -29,7 +30,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} ${newsreader.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-background font-sans text-foreground">{children}</body>
+      <body className="min-h-full flex flex-col bg-background font-sans text-foreground">
+        {children}
+      </body>
     </html>
   );
 }

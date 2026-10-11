@@ -1,12 +1,23 @@
-import { causeFromEvent, type RaindropFailureEvent } from "../raindrop/evidence";
+import {
+  causeFromEvent,
+  type RaindropFailureEvent,
+} from "../raindrop/evidence";
 import { executeNova } from "./nova";
-import { ARENA_TASK, type AtlasDecision, type AtlasTest, type HarnessConfig, type RaindropCause } from "./types";
+import {
+  ARENA_TASK,
+  type MissionTask,
+  type AtlasDecision,
+  type AtlasTest,
+  type HarnessConfig,
+  type RaindropCause,
+} from "./types";
 import type { ToolRegistry } from "./tools";
 
 export async function judgeProposal(
   proposal: HarnessConfig & { cause: RaindropCause },
   registry: ToolRegistry,
   evidence: RaindropFailureEvent,
+  task: MissionTask = ARENA_TASK,
 ): Promise<AtlasDecision> {
   const tests: AtlasTest[] = [];
   const check = (name: string, passed: boolean, detail: string) => {
@@ -15,12 +26,16 @@ export async function judgeProposal(
 
   check(
     "keeps-no-fabricated-headline",
-    proposal.guardrails.some((guardrail) => guardrail.id === "no-fabricated-headline"),
+    proposal.guardrails.some(
+      (guardrail) => guardrail.id === "no-fabricated-headline",
+    ),
     "The proposal keeps the guardrail that forbids invented headlines.",
   );
   check(
     "adds-live-fallback-guardrail",
-    proposal.guardrails.some((guardrail) => guardrail.id === "require-live-fallback"),
+    proposal.guardrails.some(
+      (guardrail) => guardrail.id === "require-live-fallback",
+    ),
     "The proposal adds the fallback guardrail.",
   );
   check(
@@ -54,17 +69,26 @@ export async function judgeProposal(
     `Proposal cites Raindrop event ${cited.eventId} span ${cited.spanName} ${cited.errorName}: ${cited.errorMessage}.`,
   );
 
-  const enabled = proposal.tools.filter((tool) => tool.enabled && tool.purpose === "fetch_brief");
+  const enabled = proposal.tools.filter(
+    (tool) => tool.enabled && tool.purpose === "fetch_brief",
+  );
   const tool = enabled.length === 1 ? registry[enabled[0].name] : undefined;
-  check("one-enabled-fetch-tool", enabled.length === 1, `Enabled fetch_brief tools: ${enabled.length}.`);
+  check(
+    "one-enabled-fetch-tool",
+    enabled.length === 1,
+    `Enabled fetch_brief tools: ${enabled.length}.`,
+  );
   check(
     "fallback-is-available",
     Boolean(tool?.available) && tool?.name !== evidence.span.name,
-    tool ? `${tool.name} available=${tool.available}. Raindrop span was ${evidence.span.name}.` : "No registered tool for the enabled binding.",
+    tool
+      ? `${tool.name} available=${tool.available}. Raindrop span was ${evidence.span.name}.`
+      : "No registered tool for the enabled binding.",
   );
 
   if (enabled.length === 1 && tool) {
     const run = await executeNova(proposal, registry, {
+      task,
       priorFailure: {
         toolName: evidence.span.name,
         errorName: evidence.span.error.name,
@@ -72,17 +96,26 @@ export async function judgeProposal(
       },
     });
     const originalFailureGone =
-      run.ok === true && run.invoked === true && run.toolName !== evidence.span.name && run.errorName !== evidence.span.error.name;
+      run.ok === true &&
+      run.invoked === true &&
+      run.toolName !== evidence.span.name &&
+      run.errorName !== evidence.span.error.name;
     check(
       "original-failure-gone",
       originalFailureGone,
       `Raindrop event ${evidence.eventId} span ${evidence.span.name} recorded ${evidence.span.error.name}: ${evidence.span.error.message}. Rerun invoked ${run.toolName ?? "nothing"}${run.ok ? " and did not throw that error" : ` and threw ${run.errorName ?? "an error"}`}.`,
     );
-    check("execution-succeeds", run.ok, run.ok ? "NOVA completed the task." : (run.errorMessage ?? "NOVA failed."));
+    check(
+      "execution-succeeds",
+      run.ok,
+      run.ok
+        ? "The agent completed the task."
+        : (run.errorMessage ?? "The agent failed."),
+    );
     check(
       "headline-matches",
-      run.headline === ARENA_TASK.expectedHeadline,
-      `Headline: ${run.headline ?? "none"}.`,
+      run.headline === task.expectedHeadline,
+      `Expected: ${task.expectedHeadline}. Actual: ${run.headline ?? "none"}.`,
     );
     check(
       "context-retained-failure",
@@ -100,19 +133,24 @@ export async function judgeProposal(
       false,
       `Raindrop event ${evidence.eventId} span ${evidence.span.name} recorded ${evidence.span.error.name}: ${evidence.span.error.message}. Rerun did not replace that span.`,
     );
-    check("execution-succeeds", false, "Execution skipped because the tool binding is invalid.");
+    check(
+      "execution-succeeds",
+      false,
+      "Execution skipped because the tool binding is invalid.",
+    );
     check("headline-matches", false, "No headline.");
     check("context-retained-failure", false, "No successful run.");
     check("context-within-policy", false, "No successful run.");
   }
 
-  const accepted = tests.every((test) => test.passed);
+  const failed = tests.filter((test) => !test.passed);
+  const accepted = failed.length === 0;
   return {
     accepted,
-    actor: "ATLAS",
+    actor: "Verification",
     reason: accepted
-      ? `Accepted. Raindrop span ${evidence.span.name} (${evidence.span.error.name}) is not the tool the rerun called.`
-      : `Rejected. Raindrop span ${evidence.span.name} is still the problem, or the proposal does not cite event ${evidence.eventId}.`,
+      ? `Accepted. All ${tests.length} requirements passed. Raindrop span ${evidence.span.name} (${evidence.span.error.name}) is not the tool the rerun called.`
+      : `Rejected. Failed requirements: ${failed.map((test) => test.name).join(", ")}. ${failed.map((test) => test.detail).join(" ")}`,
     tests,
   };
 }

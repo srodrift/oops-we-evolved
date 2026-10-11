@@ -1,4 +1,8 @@
-import type { Diagnosis, RaindropCause, RaindropFailureEvent } from "../raindrop/evidence";
+import type {
+  Diagnosis,
+  RaindropCause,
+  RaindropFailureEvent,
+} from "../raindrop/evidence";
 
 export type { Diagnosis, RaindropCause, RaindropFailureEvent };
 
@@ -7,6 +11,12 @@ export const ARENA_TASK = {
   instruction: "Retrieve the arena status brief and return its headline.",
   expectedHeadline: "GROUND ARCHIVE // ARENA NOMINAL",
 } as const;
+
+export type MissionTask = {
+  id: string;
+  instruction: string;
+  expectedHeadline: string;
+};
 
 export type ToolPurpose = "fetch_brief";
 
@@ -85,7 +95,7 @@ export type AtlasTest = {
 
 export type AtlasDecision = {
   accepted: boolean;
-  actor: "ATLAS";
+  actor: "Verification";
   reason: string;
   tests: AtlasTest[];
 };
@@ -115,7 +125,7 @@ export type CycleStepStatus =
 
 export type CycleStep = {
   index: 1 | 2 | 3 | 4 | 5 | 6 | 7;
-  actor: "NOVA" | "GLITCH" | "MORPH" | "ATLAS";
+  actor: "Agent" | "Raindrop" | "Harness Repair" | "Verification";
   title: string;
   status: CycleStepStatus;
   detail: string;
@@ -125,7 +135,9 @@ export type CycleStep = {
 export type StoreKind = "memory" | "file" | "mongodb";
 
 export type CycleReport = {
-  task: typeof ARENA_TASK;
+  scenario?: "primary-outage" | "corrupt-archive";
+  task: MissionTask;
+  input?: { source: "operator"; brief: string };
   store: StoreKind;
   approvedVersion: number | null;
   steps: CycleStep[];

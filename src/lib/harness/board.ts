@@ -61,7 +61,7 @@ const TEST_LABELS: Record<string, string> = {
   "headline-only": "Returns the headline only",
   "one-enabled-fetch-tool": "Exactly one fetch tool is on",
   "fallback-is-available": "That tool is available",
-  "execution-succeeds": "Live rerun succeeded",
+  "execution-succeeds": "Fallback tool invocation succeeded",
   "headline-matches": "Headline matches the archive",
   "context-retained-failure": "Rerun context kept the failure",
   "context-within-policy": "Context stayed inside the size cap",
@@ -105,26 +105,26 @@ export function toBoard(seed: HarnessConfig, report: CycleReport | null): Board 
     ran: true,
     banner: banner({ novaFailed, rerunOk, headline, savedVersion, accepted: decision?.accepted ?? false }),
     nova: {
-      waiting: "NOVA calls the one enabled tool on harness v1.",
+      waiting: "The agent calls the one enabled tool on harness v1.",
       call: novaFailed
         ? `Called ${toolName ?? "the enabled tool"} on harness v1.`
-        : (step(report, 1)?.detail ?? "NOVA did not complete v1."),
+        : (step(report, 1)?.detail ?? "The agent did not complete v1."),
       errorName,
       errorMessage,
       invoked,
       rerun: rerunOk
         ? `Loaded harness v${loadedVersion ?? savedVersion}. ${rerunTool} returned ${headline}.`
         : rerun?.status === "skipped"
-          ? "NOVA did not rerun. No approved harness was saved."
+          ? "The agent did not rerun. No approved harness was saved."
           : null,
     },
     glitch: {
-      waiting: "GLITCH diagnoses the Raindrop span.",
+      waiting: "Failure diagnosis diagnoses the Raindrop span.",
       summary: investigation?.diagnosis.summary ?? null,
       raindrop: investigation ? raindropCopy(investigation.raindrop) : null,
     },
     morph: {
-      waiting: "MORPH writes the next harness from that evidence.",
+      waiting: "Harness repair writes the next harness from that evidence.",
       proposer: proposerCopy(stringField(proposal?.evidence, "source")),
       rationale: stringField(proposal?.evidence, "rationale"),
       v1,
@@ -132,7 +132,7 @@ export function toBoard(seed: HarnessConfig, report: CycleReport | null): Board 
       v2State: approved ? "approved" : v2 ? "proposed" : "empty",
     },
     atlas: {
-      waiting: "ATLAS runs the proposal before anything is saved.",
+      waiting: "Verification runs the proposal before anything is saved.",
       verdict: decision ? (decision.accepted ? "Accepted" : "Rejected") : null,
       saved: savedLine(saved?.status ?? null, saved?.evidence, savedVersion),
       passed: tests.filter((test) => test.passed).length,
@@ -148,7 +148,7 @@ function waitingBoard(v1: HarnessColumn): Board {
     ran: false,
     banner: null,
     nova: {
-      waiting: "NOVA calls the one enabled tool on harness v1.",
+      waiting: "The agent calls the one enabled tool on harness v1.",
       call: null,
       errorName: null,
       errorMessage: null,
@@ -156,12 +156,12 @@ function waitingBoard(v1: HarnessColumn): Board {
       rerun: null,
     },
     glitch: {
-      waiting: "GLITCH diagnoses the Raindrop span.",
+      waiting: "Failure diagnosis diagnoses the Raindrop span.",
       summary: null,
       raindrop: null,
     },
     morph: {
-      waiting: "MORPH writes the next harness from that evidence.",
+      waiting: "Harness repair writes the next harness from that evidence.",
       proposer: null,
       rationale: null,
       v1,
@@ -169,7 +169,7 @@ function waitingBoard(v1: HarnessColumn): Board {
       v2State: "empty",
     },
     atlas: {
-      waiting: "ATLAS runs the proposal before anything is saved.",
+      waiting: "Verification runs the proposal before anything is saved.",
       verdict: null,
       saved: null,
       passed: 0,
@@ -363,7 +363,7 @@ function banner(input: {
     return `Harness v1 threw. Approved v${input.savedVersion} was saved. The rerun returned ${input.headline}.`;
   }
   if (input.novaFailed && !input.accepted) {
-    return "Harness v1 threw. ATLAS rejected the proposal. Nothing was saved.";
+    return "Harness v1 threw. Verification rejected the proposal. Nothing was saved.";
   }
   return null;
 }

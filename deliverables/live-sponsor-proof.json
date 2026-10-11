@@ -1,0 +1,619 @@
+{
+  "verifiedAt": "2026-10-11T23:23:09.564Z",
+  "mode": "live-sponsor-integration",
+  "scope": "Controlled local tools; live Raindrop terminal event delivery and MongoDB storage",
+  "mongo": {
+    "database": "morph",
+    "collection": "harness_versions",
+    "independentReadback": true,
+    "rejectedRepairNotSaved": true
+  },
+  "recovery": {
+    "task": {
+      "id": "retrieve-operator-brief",
+      "instruction": "Retrieve the operator's incident brief and return its first-line headline exactly.",
+      "expectedHeadline": "SPONSOR CHECK // VERIFIED RECOVERY"
+    },
+    "store": "mongodb",
+    "approvedVersion": 4,
+    "steps": [
+      {
+        "index": 1,
+        "actor": "Agent",
+        "title": "Execute the task with harness v1",
+        "status": "failure",
+        "detail": "The agent ran harness v1 and failed.",
+        "evidence": {
+          "configVersion": 1,
+          "task": "Retrieve the operator's incident brief and return its first-line headline exactly.",
+          "toolName": "orbital_uplink",
+          "invoked": true,
+          "ok": false,
+          "rules": [
+            {
+              "id": "use-enabled-fetch-tool",
+              "text": "Invoke the single enabled fetch_brief tool. Do not substitute another tool."
+            },
+            {
+              "id": "headline-only",
+              "text": "Return only the brief headline."
+            }
+          ],
+          "tools": [
+            {
+              "name": "orbital_uplink",
+              "purpose": "fetch_brief",
+              "enabled": true
+            }
+          ]
+        }
+      },
+      {
+        "index": 2,
+        "actor": "Agent",
+        "title": "Unavailable tool is invoked and throws",
+        "status": "failure",
+        "detail": "orbital_uplink threw ToolUnavailableError: orbital_uplink is offline: no carrier for retrieve-operator-brief",
+        "evidence": {
+          "invoked": true,
+          "toolName": "orbital_uplink",
+          "errorName": "ToolUnavailableError",
+          "errorMessage": "orbital_uplink is offline: no carrier for retrieve-operator-brief",
+          "stack": "ToolUnavailableError: orbital_uplink is offline: no carrier for retrieve-operator-brief\n    at Object.invokeOrbitalUplink (/Users/sunnysideup/.codex/.chatgpt-projects/g-p-6a6bed7d187881918a0c8f1d1effa0f7/morph-lab/src/lib/harness/tools.ts:23:9)\n    at executeNova (/Users/sunnysideup/.codex/.chatgpt-projects/g-p-6a6bed7d187881918a0c8f1d1effa0f7/morph-lab/src/lib/harness/nova.ts:108:41)\n    at runEvolutionCycle (/Users/sunnysideup/.codex/.chatgpt-projects/g-p-6a6bed7d187881918a0c8f1d1effa0f7/morph-lab/src/lib/harness/cycle.ts:47:26)\n    at main (/Users/sunnysideup/.codex/.chatgpt-projects/g-p-6a6bed7d187881918a0c8f1d1effa0f7/morph-lab/scripts/verify-sponsors.ts:29:21)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)",
+          "durationMs": 2,
+          "guardrailHeld": true
+        }
+      },
+      {
+        "index": 3,
+        "actor": "Raindrop",
+        "title": "Diagnose the Raindrop span",
+        "status": "recorded",
+        "detail": "Raindrop event 1825e2e0-7826-49e5-97ee-7c1d248f1508 span orbital_uplink failed with ToolUnavailableError: orbital_uplink is offline: no carrier for retrieve-operator-brief. Sent to Raindrop.",
+        "evidence": {
+          "raindrop": {
+            "eventId": "1825e2e0-7826-49e5-97ee-7c1d248f1508",
+            "event": "tool_failure_investigation",
+            "userId": "agent-harness",
+            "convoId": "morph-1825e2e0-7826-49e5-97ee-7c1d248f1508",
+            "input": "Tool span orbital_uplink failed: ToolUnavailableError: orbital_uplink is offline: no carrier for retrieve-operator-brief",
+            "properties": {
+              "actor": "Agent Harness",
+              "harness": "morph",
+              "tool": "orbital_uplink",
+              "error_name": "ToolUnavailableError"
+            },
+            "span": {
+              "name": "orbital_uplink",
+              "input": {
+                "taskId": "retrieve-operator-brief",
+                "invoked": true
+              },
+              "error": {
+                "name": "ToolUnavailableError",
+                "message": "orbital_uplink is offline: no carrier for retrieve-operator-brief"
+              },
+              "durationMs": 2,
+              "properties": {
+                "stage": "nova_execution",
+                "actor": "Agent"
+              }
+            },
+            "diagnostic": {
+              "eventId": "1825e2e0-7826-49e5-97ee-7c1d248f1508",
+              "description": "Tool span orbital_uplink failed: ToolUnavailableError: orbital_uplink is offline: no carrier for retrieve-operator-brief",
+              "category": "tool_failure",
+              "source": "Agent Harness",
+              "sentiment": "NEGATIVE",
+              "properties": {
+                "tool": "orbital_uplink",
+                "error_name": "ToolUnavailableError",
+                "error_message": "orbital_uplink is offline: no carrier for retrieve-operator-brief"
+              }
+            },
+            "delivered": true
+          },
+          "diagnosis": {
+            "eventId": "1825e2e0-7826-49e5-97ee-7c1d248f1508",
+            "unavailableTool": "orbital_uplink",
+            "errorName": "ToolUnavailableError",
+            "errorMessage": "orbital_uplink is offline: no carrier for retrieve-operator-brief",
+            "summary": "Raindrop event 1825e2e0-7826-49e5-97ee-7c1d248f1508 span orbital_uplink failed with ToolUnavailableError: orbital_uplink is offline: no carrier for retrieve-operator-brief."
+          }
+        }
+      },
+      {
+        "index": 4,
+        "actor": "Harness Repair",
+        "title": "Propose harness v4",
+        "status": "proposed",
+        "detail": "Deterministic proposer: Raindrop event 1825e2e0-7826-49e5-97ee-7c1d248f1508 span orbital_uplink recorded ToolUnavailableError: orbital_uplink is offline: no carrier for retrieve-operator-brief. Disable orbital_uplink and enable ground_archive.",
+        "evidence": {
+          "source": "deterministic",
+          "rationale": "Raindrop event 1825e2e0-7826-49e5-97ee-7c1d248f1508 span orbital_uplink recorded ToolUnavailableError: orbital_uplink is offline: no carrier for retrieve-operator-brief. Disable orbital_uplink and enable ground_archive.",
+          "cause": {
+            "eventId": "1825e2e0-7826-49e5-97ee-7c1d248f1508",
+            "spanName": "orbital_uplink",
+            "errorName": "ToolUnavailableError",
+            "errorMessage": "orbital_uplink is offline: no carrier for retrieve-operator-brief"
+          },
+          "version": 4,
+          "parentVersion": 1,
+          "tools": [
+            {
+              "name": "orbital_uplink",
+              "purpose": "fetch_brief",
+              "enabled": false
+            },
+            {
+              "name": "ground_archive",
+              "purpose": "fetch_brief",
+              "enabled": true
+            }
+          ],
+          "rules": [
+            {
+              "id": "use-enabled-fetch-tool",
+              "text": "Invoke the single enabled fetch_brief tool. Do not substitute another tool."
+            },
+            {
+              "id": "headline-only",
+              "text": "Return only the brief headline."
+            },
+            {
+              "id": "name-the-fallback",
+              "text": "Retrieve the brief with ground_archive."
+            }
+          ],
+          "guardrails": [
+            {
+              "id": "no-fabricated-headline",
+              "text": "Do not invent a headline when the tool fails. Surface the exception as a run failure."
+            },
+            {
+              "id": "require-live-fallback",
+              "text": "Raindrop span orbital_uplink must not stay enabled. Enable ground_archive."
+            }
+          ],
+          "contextPolicy": {
+            "includeToolErrors": true,
+            "maxContextChars": 2000,
+            "retainFailureEvidence": true
+          }
+        }
+      },
+      {
+        "index": 5,
+        "actor": "Verification",
+        "title": "Test and accept or reject the proposal",
+        "status": "accepted",
+        "detail": "Accepted. All 14 requirements passed. Raindrop span orbital_uplink (ToolUnavailableError) is not the tool the rerun called.",
+        "evidence": {
+          "accepted": true,
+          "actor": "Verification",
+          "reason": "Accepted. All 14 requirements passed. Raindrop span orbital_uplink (ToolUnavailableError) is not the tool the rerun called.",
+          "tests": [
+            {
+              "name": "keeps-no-fabricated-headline",
+              "passed": true,
+              "detail": "The proposal keeps the guardrail that forbids invented headlines."
+            },
+            {
+              "name": "adds-live-fallback-guardrail",
+              "passed": true,
+              "detail": "The proposal adds the fallback guardrail."
+            },
+            {
+              "name": "retains-failure-evidence",
+              "passed": true,
+              "detail": "Context policy retains the failure that approved the change."
+            },
+            {
+              "name": "includes-tool-errors",
+              "passed": true,
+              "detail": "Context policy still includes tool errors."
+            },
+            {
+              "name": "authorizes-tool-use",
+              "passed": true,
+              "detail": "A rule still authorizes invoking the enabled tool."
+            },
+            {
+              "name": "headline-only",
+              "passed": true,
+              "detail": "A rule still requires the headline rather than the raw payload."
+            },
+            {
+              "name": "cites-raindrop-event",
+              "passed": true,
+              "detail": "Proposal cites Raindrop event 1825e2e0-7826-49e5-97ee-7c1d248f1508 span orbital_uplink ToolUnavailableError: orbital_uplink is offline: no carrier for retrieve-operator-brief."
+            },
+            {
+              "name": "one-enabled-fetch-tool",
+              "passed": true,
+              "detail": "Enabled fetch_brief tools: 1."
+            },
+            {
+              "name": "fallback-is-available",
+              "passed": true,
+              "detail": "ground_archive available=true. Raindrop span was orbital_uplink."
+            },
+            {
+              "name": "original-failure-gone",
+              "passed": true,
+              "detail": "Raindrop event 1825e2e0-7826-49e5-97ee-7c1d248f1508 span orbital_uplink recorded ToolUnavailableError: orbital_uplink is offline: no carrier for retrieve-operator-brief. Rerun invoked ground_archive and did not throw that error."
+            },
+            {
+              "name": "execution-succeeds",
+              "passed": true,
+              "detail": "The agent completed the task."
+            },
+            {
+              "name": "headline-matches",
+              "passed": true,
+              "detail": "Expected: SPONSOR CHECK // VERIFIED RECOVERY. Actual: SPONSOR CHECK // VERIFIED RECOVERY."
+            },
+            {
+              "name": "context-retained-failure",
+              "passed": true,
+              "detail": "The rerun context kept the prior tool failure."
+            },
+            {
+              "name": "context-within-policy",
+              "passed": true,
+              "detail": "Context preview is 369 characters."
+            }
+          ]
+        }
+      },
+      {
+        "index": 6,
+        "actor": "Verification",
+        "title": "Persist the approved harness",
+        "status": "saved",
+        "detail": "Saved harness v4 to MongoDB Atlas (morph.harness_versions).",
+        "evidence": {
+          "store": "mongodb",
+          "location": "morph.harness_versions",
+          "version": 4,
+          "tools": [
+            {
+              "name": "orbital_uplink",
+              "purpose": "fetch_brief",
+              "enabled": false
+            },
+            {
+              "name": "ground_archive",
+              "purpose": "fetch_brief",
+              "enabled": true
+            }
+          ],
+          "rules": [
+            {
+              "id": "use-enabled-fetch-tool",
+              "text": "Invoke the single enabled fetch_brief tool. Do not substitute another tool."
+            },
+            {
+              "id": "headline-only",
+              "text": "Return only the brief headline."
+            },
+            {
+              "id": "name-the-fallback",
+              "text": "Retrieve the brief with ground_archive."
+            }
+          ],
+          "guardrails": [
+            {
+              "id": "no-fabricated-headline",
+              "text": "Do not invent a headline when the tool fails. Surface the exception as a run failure."
+            },
+            {
+              "id": "require-live-fallback",
+              "text": "Raindrop span orbital_uplink must not stay enabled. Enable ground_archive."
+            }
+          ],
+          "contextPolicy": {
+            "includeToolErrors": true,
+            "maxContextChars": 2000,
+            "retainFailureEvidence": true
+          },
+          "createdAt": "2026-10-11T23:23:08.371Z"
+        }
+      },
+      {
+        "index": 7,
+        "actor": "Agent",
+        "title": "Load the approved harness and run again",
+        "status": "success",
+        "detail": "Harness v4 returned SPONSOR CHECK // VERIFIED RECOVERY via ground_archive.",
+        "evidence": {
+          "loadedVersion": 4,
+          "toolName": "ground_archive",
+          "invoked": true,
+          "ok": true,
+          "headline": "SPONSOR CHECK // VERIFIED RECOVERY",
+          "retainedFailure": true,
+          "contextPreview": "{\"taskId\":\"retrieve-operator-brief\",\"instruction\":\"Retrieve the operator's incident brief and return its first-line headline exactly.\",\"rules\":[\"use-enabled-fetch-tool\",\"headline-only\",\"name-the-fallback\"],\"priorFailure\":{\"toolName\":\"orbital_uplink\",\"errorName\":\"ToolUnavailableError\",\"errorMessage\":\"orbital_uplink is offline: no carrier for retrieve-operator-brief\"}}"
+        }
+      }
+    ]
+  },
+  "rejection": {
+    "task": {
+      "id": "retrieve-operator-brief",
+      "instruction": "Retrieve the operator's incident brief and return its first-line headline exactly.",
+      "expectedHeadline": "SPONSOR CHECK // VERIFIED RECOVERY"
+    },
+    "store": "mongodb",
+    "approvedVersion": null,
+    "steps": [
+      {
+        "index": 1,
+        "actor": "Agent",
+        "title": "Execute the task with harness v1",
+        "status": "failure",
+        "detail": "The agent ran harness v1 and failed.",
+        "evidence": {
+          "configVersion": 1,
+          "task": "Retrieve the operator's incident brief and return its first-line headline exactly.",
+          "toolName": "orbital_uplink",
+          "invoked": true,
+          "ok": false,
+          "rules": [
+            {
+              "id": "use-enabled-fetch-tool",
+              "text": "Invoke the single enabled fetch_brief tool. Do not substitute another tool."
+            },
+            {
+              "id": "headline-only",
+              "text": "Return only the brief headline."
+            }
+          ],
+          "tools": [
+            {
+              "name": "orbital_uplink",
+              "purpose": "fetch_brief",
+              "enabled": true
+            }
+          ]
+        }
+      },
+      {
+        "index": 2,
+        "actor": "Agent",
+        "title": "Unavailable tool is invoked and throws",
+        "status": "failure",
+        "detail": "orbital_uplink threw ToolUnavailableError: orbital_uplink is offline: no carrier for retrieve-operator-brief",
+        "evidence": {
+          "invoked": true,
+          "toolName": "orbital_uplink",
+          "errorName": "ToolUnavailableError",
+          "errorMessage": "orbital_uplink is offline: no carrier for retrieve-operator-brief",
+          "stack": "ToolUnavailableError: orbital_uplink is offline: no carrier for retrieve-operator-brief\n    at Object.invokeOrbitalUplink (/Users/sunnysideup/.codex/.chatgpt-projects/g-p-6a6bed7d187881918a0c8f1d1effa0f7/morph-lab/src/lib/harness/tools.ts:23:9)\n    at executeNova (/Users/sunnysideup/.codex/.chatgpt-projects/g-p-6a6bed7d187881918a0c8f1d1effa0f7/morph-lab/src/lib/harness/nova.ts:108:41)\n    at runEvolutionCycle (/Users/sunnysideup/.codex/.chatgpt-projects/g-p-6a6bed7d187881918a0c8f1d1effa0f7/morph-lab/src/lib/harness/cycle.ts:47:26)\n    at main (/Users/sunnysideup/.codex/.chatgpt-projects/g-p-6a6bed7d187881918a0c8f1d1effa0f7/morph-lab/scripts/verify-sponsors.ts:58:28)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)",
+          "durationMs": 0,
+          "guardrailHeld": true
+        }
+      },
+      {
+        "index": 3,
+        "actor": "Raindrop",
+        "title": "Diagnose the Raindrop span",
+        "status": "recorded",
+        "detail": "Raindrop event 9e86d2fb-84ef-4181-8158-8bf6895569e2 span orbital_uplink failed with ToolUnavailableError: orbital_uplink is offline: no carrier for retrieve-operator-brief. Sent to Raindrop.",
+        "evidence": {
+          "raindrop": {
+            "eventId": "9e86d2fb-84ef-4181-8158-8bf6895569e2",
+            "event": "tool_failure_investigation",
+            "userId": "agent-harness",
+            "convoId": "morph-9e86d2fb-84ef-4181-8158-8bf6895569e2",
+            "input": "Tool span orbital_uplink failed: ToolUnavailableError: orbital_uplink is offline: no carrier for retrieve-operator-brief",
+            "properties": {
+              "actor": "Agent Harness",
+              "harness": "morph",
+              "tool": "orbital_uplink",
+              "error_name": "ToolUnavailableError"
+            },
+            "span": {
+              "name": "orbital_uplink",
+              "input": {
+                "taskId": "retrieve-operator-brief",
+                "invoked": true
+              },
+              "error": {
+                "name": "ToolUnavailableError",
+                "message": "orbital_uplink is offline: no carrier for retrieve-operator-brief"
+              },
+              "durationMs": 0,
+              "properties": {
+                "stage": "nova_execution",
+                "actor": "Agent"
+              }
+            },
+            "diagnostic": {
+              "eventId": "9e86d2fb-84ef-4181-8158-8bf6895569e2",
+              "description": "Tool span orbital_uplink failed: ToolUnavailableError: orbital_uplink is offline: no carrier for retrieve-operator-brief",
+              "category": "tool_failure",
+              "source": "Agent Harness",
+              "sentiment": "NEGATIVE",
+              "properties": {
+                "tool": "orbital_uplink",
+                "error_name": "ToolUnavailableError",
+                "error_message": "orbital_uplink is offline: no carrier for retrieve-operator-brief"
+              }
+            },
+            "delivered": true
+          },
+          "diagnosis": {
+            "eventId": "9e86d2fb-84ef-4181-8158-8bf6895569e2",
+            "unavailableTool": "orbital_uplink",
+            "errorName": "ToolUnavailableError",
+            "errorMessage": "orbital_uplink is offline: no carrier for retrieve-operator-brief",
+            "summary": "Raindrop event 9e86d2fb-84ef-4181-8158-8bf6895569e2 span orbital_uplink failed with ToolUnavailableError: orbital_uplink is offline: no carrier for retrieve-operator-brief."
+          }
+        }
+      },
+      {
+        "index": 4,
+        "actor": "Harness Repair",
+        "title": "Propose harness v5",
+        "status": "proposed",
+        "detail": "Deterministic proposer: Raindrop event 9e86d2fb-84ef-4181-8158-8bf6895569e2 span orbital_uplink recorded ToolUnavailableError: orbital_uplink is offline: no carrier for retrieve-operator-brief. Disable orbital_uplink and enable ground_archive.",
+        "evidence": {
+          "source": "deterministic",
+          "rationale": "Raindrop event 9e86d2fb-84ef-4181-8158-8bf6895569e2 span orbital_uplink recorded ToolUnavailableError: orbital_uplink is offline: no carrier for retrieve-operator-brief. Disable orbital_uplink and enable ground_archive.",
+          "cause": {
+            "eventId": "9e86d2fb-84ef-4181-8158-8bf6895569e2",
+            "spanName": "orbital_uplink",
+            "errorName": "ToolUnavailableError",
+            "errorMessage": "orbital_uplink is offline: no carrier for retrieve-operator-brief"
+          },
+          "version": 5,
+          "parentVersion": 1,
+          "tools": [
+            {
+              "name": "orbital_uplink",
+              "purpose": "fetch_brief",
+              "enabled": false
+            },
+            {
+              "name": "ground_archive",
+              "purpose": "fetch_brief",
+              "enabled": true
+            }
+          ],
+          "rules": [
+            {
+              "id": "use-enabled-fetch-tool",
+              "text": "Invoke the single enabled fetch_brief tool. Do not substitute another tool."
+            },
+            {
+              "id": "headline-only",
+              "text": "Return only the brief headline."
+            },
+            {
+              "id": "name-the-fallback",
+              "text": "Retrieve the brief with ground_archive."
+            }
+          ],
+          "guardrails": [
+            {
+              "id": "no-fabricated-headline",
+              "text": "Do not invent a headline when the tool fails. Surface the exception as a run failure."
+            },
+            {
+              "id": "require-live-fallback",
+              "text": "Raindrop span orbital_uplink must not stay enabled. Enable ground_archive."
+            }
+          ],
+          "contextPolicy": {
+            "includeToolErrors": true,
+            "maxContextChars": 2000,
+            "retainFailureEvidence": true
+          }
+        }
+      },
+      {
+        "index": 5,
+        "actor": "Verification",
+        "title": "Test and accept or reject the proposal",
+        "status": "rejected",
+        "detail": "Rejected. Failed requirements: headline-matches. Expected: SPONSOR CHECK // VERIFIED RECOVERY. Actual: GROUND ARCHIVE // INVALID BRIEF.",
+        "evidence": {
+          "accepted": false,
+          "actor": "Verification",
+          "reason": "Rejected. Failed requirements: headline-matches. Expected: SPONSOR CHECK // VERIFIED RECOVERY. Actual: GROUND ARCHIVE // INVALID BRIEF.",
+          "tests": [
+            {
+              "name": "keeps-no-fabricated-headline",
+              "passed": true,
+              "detail": "The proposal keeps the guardrail that forbids invented headlines."
+            },
+            {
+              "name": "adds-live-fallback-guardrail",
+              "passed": true,
+              "detail": "The proposal adds the fallback guardrail."
+            },
+            {
+              "name": "retains-failure-evidence",
+              "passed": true,
+              "detail": "Context policy retains the failure that approved the change."
+            },
+            {
+              "name": "includes-tool-errors",
+              "passed": true,
+              "detail": "Context policy still includes tool errors."
+            },
+            {
+              "name": "authorizes-tool-use",
+              "passed": true,
+              "detail": "A rule still authorizes invoking the enabled tool."
+            },
+            {
+              "name": "headline-only",
+              "passed": true,
+              "detail": "A rule still requires the headline rather than the raw payload."
+            },
+            {
+              "name": "cites-raindrop-event",
+              "passed": true,
+              "detail": "Proposal cites Raindrop event 9e86d2fb-84ef-4181-8158-8bf6895569e2 span orbital_uplink ToolUnavailableError: orbital_uplink is offline: no carrier for retrieve-operator-brief."
+            },
+            {
+              "name": "one-enabled-fetch-tool",
+              "passed": true,
+              "detail": "Enabled fetch_brief tools: 1."
+            },
+            {
+              "name": "fallback-is-available",
+              "passed": true,
+              "detail": "ground_archive available=true. Raindrop span was orbital_uplink."
+            },
+            {
+              "name": "original-failure-gone",
+              "passed": true,
+              "detail": "Raindrop event 9e86d2fb-84ef-4181-8158-8bf6895569e2 span orbital_uplink recorded ToolUnavailableError: orbital_uplink is offline: no carrier for retrieve-operator-brief. Rerun invoked ground_archive and did not throw that error."
+            },
+            {
+              "name": "execution-succeeds",
+              "passed": true,
+              "detail": "The agent completed the task."
+            },
+            {
+              "name": "headline-matches",
+              "passed": false,
+              "detail": "Expected: SPONSOR CHECK // VERIFIED RECOVERY. Actual: GROUND ARCHIVE // INVALID BRIEF."
+            },
+            {
+              "name": "context-retained-failure",
+              "passed": true,
+              "detail": "The rerun context kept the prior tool failure."
+            },
+            {
+              "name": "context-within-policy",
+              "passed": true,
+              "detail": "Context preview is 369 characters."
+            }
+          ]
+        }
+      },
+      {
+        "index": 6,
+        "actor": "Verification",
+        "title": "Persist the approved harness",
+        "status": "skipped",
+        "detail": "Nothing was written to MongoDB Atlas (morph.harness_versions).",
+        "evidence": {
+          "store": "mongodb"
+        }
+      },
+      {
+        "index": 7,
+        "actor": "Agent",
+        "title": "Load the approved harness and run again",
+        "status": "skipped",
+        "detail": "The agent did not rerun because no approved harness was saved.",
+        "evidence": null
+      }
+    ]
+  }
+}
