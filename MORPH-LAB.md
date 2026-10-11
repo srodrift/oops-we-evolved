@@ -48,7 +48,7 @@ Open http://localhost:3033. Configure integrations using the existing `.env.exam
 - Lint, TypeScript and production build pass.
 - Chrome against the production build: real Run produces recovery; the corrupt fallback is rejected; evidence opens/closes and exports the actual report; Replay and Reset do not issue a new POST; zoom/pan/fit, packet freeze/resume, stage focus, reduced motion and keyboard inspection work.
 - Mobile at 390px: no horizontal overflow; controls and panels reflow.
-- Live Raindrop/MongoDB checks were not run: no credentials in this checkout.
+- Live sponsor verification passed: Raindrop terminal-event acknowledgement, independent MongoDB Atlas readback with matching event ID, successful rerun, and rejected repair not saved. Redacted evidence is in `deliverables/live-sponsor-proof.json`. Raindrop dashboard indexing and separately batched telemetry are not independently verified.
 
 Screenshots are in `review/` (ready, diagnosis, mutation, recovered, rejected, evidence and mobile).
 

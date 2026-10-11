@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import { chromium } from "playwright";
 import { mkdir, rename } from "node:fs/promises";
 import { resolve } from "node:path";
@@ -24,6 +25,23 @@ await page.evaluate(() => {
   caption.id = "demo-caption";
   document.body.append(caption);
 });
+const live = process.env.MORPH_RECORD_LIVE === "1";
+const run = async () => {
+  const response = page.waitForResponse(
+    (r) => r.url().endsWith("/api/cycle") && r.request().method() === "POST",
+  );
+  await page.getByRole("button", { name: /Run Mission/ }).click();
+  const result = await response;
+  assert.equal(result.status(), 200);
+  const report = await result.json();
+  if (live) {
+    assert.equal(report.store, "mongodb");
+    assert.equal(
+      report.steps.find((s) => s.index === 3).evidence.raindrop.delivered,
+      true,
+    );
+  }
+};
 const start = Date.now();
 const at = async (seconds, text, action) => {
   await page.waitForTimeout(Math.max(0, start + seconds * 1000 - Date.now()));
@@ -54,7 +72,7 @@ await at(
   14,
   "Run Mission executes real local tools. The primary tool actually throws.",
   async () => {
-    await page.getByRole("button", { name: /Run Mission/ }).click();
+    await run();
   },
 );
 await at(
@@ -77,11 +95,13 @@ await at(
 );
 await at(
   42,
-  "This capture uses local evidence and file storage. Live integrations are labeled separately.",
+  live
+    ? "Live Raindrop event delivery and MongoDB Atlas persistence verified. Tools remain local."
+    : "This capture uses local evidence and file storage. Live integrations are labeled separately.",
   async () => {
     await page.getByRole("button", { name: "Close evidence" }).click();
     await page.locator("#experiment").selectOption("corrupt-archive");
-    await page.getByRole("button", { name: /Run Mission/ }).click();
+    await run();
   },
 );
 await at(

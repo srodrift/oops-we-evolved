@@ -16,7 +16,7 @@ The operator supplies an incident brief. The mission is to retrieve its first-li
 
 **28–35s:** “Verification compares the tool’s output with my source. The approved harness is saved, read back, and used for a fresh successful run.”
 
-**35–42s:** “We can inspect the actual event ID, error, changed configuration, tests, and persistence result.”
+**35–42s:** “We can inspect the actual Raindrop event ID, error, changed configuration, tests, and MongoDB Atlas persistence result.”
 
 **42–55s:** “Now I corrupt the fallback. It responds, but its answer is wrong. The same verification rejects the repair and does not save it.”
 
@@ -26,6 +26,6 @@ The operator supplies an incident brief. The mission is to retrieve its first-li
 
 The provided MP4 and WebM are silent browser recordings with explanatory captions. Read the narration over it, or record the working app yourself. Rotate and zoom the 3D view, enter a brief, run Primary outage, inspect evidence, then run Corrupt fallback.
 
-This recording uses local Raindrop evidence, a deterministic proposer, and file persistence. MongoDB Atlas is the configured database integration; Raindrop live delivery and MongoDB live persistence require credentials and were not verified in this checkout. Do not claim the silent recording demonstrates live sponsor delivery.
+The updated recording uses live Raindrop terminal-event delivery and MongoDB Atlas persistence, verified by the strict integration check. The proposer is deterministic and tools are controlled local implementations. See deliverables/live-sponsor-proof.json for independent database readback and rejection evidence. Raindrop dashboard indexing and separately batched telemetry were not independently verified.
 
-Re-record with `node scripts/record-demo.mjs` against the local server on port 3034. Set `MORPH_BASE_URL` or `MORPH_BROWSER_PATH` if needed. Install Playwright's ffmpeg once using `npx playwright install ffmpeg`.
+Re-record with `node scripts/record-demo.mjs` against the local server on port 3034. Set `MORPH_RECORD_LIVE=1` to require verified live integration reports. Set `MORPH_BASE_URL` or `MORPH_BROWSER_PATH` if needed. Install Playwright's ffmpeg once using `npx playwright install ffmpeg`.

@@ -9,7 +9,8 @@
     "lint": "eslint",
     "test": "tsx --test src/lib/harness/*.test.ts",
     "cycle": "tsx scripts/run-cycle.ts",
-    "test:browser": "node scripts/check-lab.mjs"
+    "test:browser": "node scripts/check-lab.mjs",
+    "verify:sponsors": "node --import tsx scripts/verify-sponsors.ts"
   },
   "dependencies": {
     "mongodb": "^7.7.0",

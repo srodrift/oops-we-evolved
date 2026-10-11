@@ -47,3 +47,9 @@ Copy `.env.example` to `.env.local` only if you want Atlas, Raindrop, or OpenAI.
 Start the app, then run `npm run test:browser`. Install Chromium once with `npx playwright install chromium`, or set `MORPH_BROWSER_PATH` to an installed Chrome executable. `MORPH_BASE_URL` defaults to `http://localhost:3033`; `MORPH_CAPTURE_DIR=review` saves screenshots. The browser check executes real recovery and rejection experiments, verifies replay isolation, camera controls, frozen packet motion, reduced motion, evidence download, keyboard navigation, mobile layout and explicit HTTP-error handling.
 
 Deployment remains separate from the review branch.
+
+## Live sponsor proof
+
+Configure `MONGODB_URI` and `RAINDROP_API_KEY` (or `RAINDROP_WRITE_KEY`) in the gitignored `.env.local`, then run `npm run verify:sponsors`. This loads Next's environment configuration and requires live sponsor credentials; local adapters cannot pass. It runs recovery and corrupt-fallback rejection, checks Raindrop terminal-event acknowledgement, reads the saved harness through a new MongoDB client, verifies the same event ID survived persistence, and verifies rejection does not create a new version.
+
+A successful run writes redacted `deliverables/live-sponsor-proof.json`. Match the event ID in the Raindrop dashboard to confirm remote visibility. Terminal-event acknowledgement does not independently establish dashboard indexing or separately batched tool/signal delivery. The tools themselves remain controlled local implementations. Restart the demo after changing credentials.

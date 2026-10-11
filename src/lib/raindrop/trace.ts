@@ -111,7 +111,20 @@ async function deliver(
       sentiment: event.diagnostic.sentiment,
       properties: event.diagnostic.properties,
     });
-    await interaction.finish({ output: event.diagnostic.description });
+    // The terminal event is awaited by the SDK. Include the failure payload
+    // here as well as in tool/signal telemetry, whose batching is separate.
+    await interaction.finish({
+      output: event.diagnostic.description,
+      properties: {
+        failure_event_id: event.eventId,
+        failure_tool: event.span.name,
+        failure_error_name: event.span.error.name,
+        failure_error_message: event.span.error.message,
+        diagnostic_category: event.diagnostic.category,
+        diagnostic_source: event.diagnostic.source,
+        delivery_scope: "terminal_event_acknowledgement",
+      },
+    });
   } finally {
     await client.close().catch(() => undefined);
   }
