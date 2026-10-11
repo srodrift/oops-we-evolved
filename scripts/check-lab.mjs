@@ -165,12 +165,10 @@ try {
   for await (const chunk of downloadStream) downloaded += chunk;
   assert.deepEqual(JSON.parse(downloaded), report);
   await page.getByRole("button", { name: "Close evidence" }).click();
-  await page.getByRole("button", { name: "World", exact: true }).click();
-  await page
-    .getByAltText("Original Pulse artwork after verified recovery")
-    .waitFor();
-  await capture("morph-lab-world.png");
-  await page.getByRole("button", { name: "Control room", exact: true }).click();
+  assert.equal(
+    await page.getByRole("button", { name: "World", exact: true }).count(),
+    0,
+  );
   await page.getByRole("button", { name: "Replay Execution" }).click();
   await page.getByRole("button", { name: "Reset View" }).click();
   assert.equal(missionRequests, 1);
@@ -226,11 +224,6 @@ try {
     .waitFor();
   await capture("morph-lab-3d-rejected.png");
   await page.getByRole("button", { name: "Blueprint", exact: true }).click();
-  await page.getByRole("button", { name: "World", exact: true }).click();
-  await page
-    .getByAltText("Original Spark artwork before verified recovery")
-    .waitFor();
-  await page.getByRole("button", { name: "Control room", exact: true }).click();
   await page.setViewportSize({ width: 390, height: 844 });
   await capture("morph-lab-mobile-rejected.png");
   assert.equal(

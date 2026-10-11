@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { toBoard } from "@/lib/harness/board";
 import Link from "next/link";
-import Image from "next/image";
 import { InfrastructureScene } from "@/components/infrastructure-scene";
 import { DEFAULT_BRIEF } from "@/lib/harness/mission";
 import {
@@ -35,7 +34,6 @@ export function Arena({ seed }: { seed: HarnessConfig }) {
   const [evidenceOpen, setEvidenceOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [runNumber, setRunNumber] = useState(0);
-  const [view, setView] = useState<"lab" | "world">("lab");
   const [speed, setSpeed] = useState(1);
   const [experiment, setExperiment] = useState<ExperimentId>("primary-outage");
   const [cameraReset, setCameraReset] = useState(0);
@@ -47,11 +45,9 @@ export function Arena({ seed }: { seed: HarnessConfig }) {
   const simulation = simulationState(report, stage);
   const evolved = simulation.recovered;
   const failure = recordedStep(report, 3)?.evidence as
-    | FailureEvidence
-    | undefined;
+    FailureEvidence | undefined;
   const proposal = recordedStep(report, 4)?.evidence as
-    | HarnessConfig
-    | undefined;
+    HarnessConfig | undefined;
   const activeStep = recordedStep(report, LAB_STAGES[stage].step);
 
   const visibleTests = stage >= 4 ? board.atlas.tests : [];
@@ -154,20 +150,6 @@ export function Arena({ seed }: { seed: HarnessConfig }) {
           <span className="brand-mark">◈</span>
           <span className="brand-name">Oops, We Evolved!</span>
         </Link>
-        <nav aria-label="Views">
-          <button
-            className={view === "lab" ? "tab active" : "tab"}
-            onClick={() => setView("lab")}
-          >
-            Control room
-          </button>
-          <button
-            className={view === "world" ? "tab active" : "tab"}
-            onClick={() => setView("world")}
-          >
-            World
-          </button>
-        </nav>
         <span className="header-meta">
           <i className="dot" /> AGENT HARNESS RECOVERY <span>SF / 01</span>
         </span>
@@ -211,8 +193,7 @@ export function Arena({ seed }: { seed: HarnessConfig }) {
         >
           <div className="panel-top">
             <span>
-              <i className="dot" />{" "}
-              {view === "lab" ? "AGENT TOOL NETWORK" : "ORIGINAL ARTWORK"}
+              <i className="dot" /> AGENT TOOL NETWORK
             </span>
             <span className={running ? "mode live" : "mode"}>
               {running
@@ -224,86 +205,52 @@ export function Arena({ seed }: { seed: HarnessConfig }) {
                   : "SCENARIO READY"}
             </span>
           </div>
-          {view === "world" ? (
-            <div className="world-scene">
-              <Image
-                width={1600}
-                height={900}
-                src={
-                  evolved
-                    ? "/arena/sf-arena-after.jpg"
-                    : "/arena/sf-arena-before.jpg"
-                }
-                alt={
-                  evolved
-                    ? "Original Pulse artwork after verified recovery"
-                    : "Original Spark artwork before verified recovery"
-                }
-              />
-              <div>
-                <span className="eyebrow">
-                  {evolved
-                    ? "PULSE / VERIFIED EVOLUTION"
-                    : "SPARK / ORIGINAL HARNESS"}
-                </span>
-                <p>
-                  {evolved
-                    ? board.nova.rerun
-                    : "Pulse unlocks only after verification approval, persistence and a successful rerun."}
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div>
-              <div
-                className="scene-view-tabs"
-                aria-label="Simulation rendering"
+          <div>
+            <div className="scene-view-tabs" aria-label="Simulation rendering">
+              <button
+                aria-pressed={sceneView === "3d"}
+                onClick={() => setSceneView("3d")}
               >
-                <button
-                  aria-pressed={sceneView === "3d"}
-                  onClick={() => setSceneView("3d")}
-                >
-                  3D Orbit
-                </button>
-                <button
-                  aria-pressed={sceneView === "blueprint"}
-                  onClick={() => setSceneView("blueprint")}
-                >
-                  Blueprint
-                </button>
-                <span>Camera changes the view. Run changes the harness.</span>
-              </div>
-              {sceneView === "3d" ? (
-                <InfrastructureScene
-                  key={`3d-${cameraReset}`}
-                  stage={stage}
-                  report={report}
-                  selected={selected}
-                  onSelect={(id) => {
-                    setSelected(id);
-                    setFollow(false);
-                  }}
-                  playing={playing}
-                  running={running}
-                  speed={speed}
-                />
-              ) : (
-                <InfrastructureMap
-                  key={`map-${cameraReset}`}
-                  stage={stage}
-                  report={report}
-                  selected={selected}
-                  onSelect={(id) => {
-                    setSelected(id);
-                    setFollow(false);
-                  }}
-                  playing={playing}
-                  running={running}
-                  speed={speed}
-                />
-              )}
+                3D Orbit
+              </button>
+              <button
+                aria-pressed={sceneView === "blueprint"}
+                onClick={() => setSceneView("blueprint")}
+              >
+                Blueprint
+              </button>
+              <span>Camera changes the view. Run changes the harness.</span>
             </div>
-          )}
+            {sceneView === "3d" ? (
+              <InfrastructureScene
+                key={`3d-${cameraReset}`}
+                stage={stage}
+                report={report}
+                selected={selected}
+                onSelect={(id) => {
+                  setSelected(id);
+                  setFollow(false);
+                }}
+                playing={playing}
+                running={running}
+                speed={speed}
+              />
+            ) : (
+              <InfrastructureMap
+                key={`map-${cameraReset}`}
+                stage={stage}
+                report={report}
+                selected={selected}
+                onSelect={(id) => {
+                  setSelected(id);
+                  setFollow(false);
+                }}
+                playing={playing}
+                running={running}
+                speed={speed}
+              />
+            )}
+          </div>
           <div className="map-footer">
             <div>
               <span className="legend-dot coral" /> Failed primary{" "}
@@ -312,63 +259,61 @@ export function Arena({ seed }: { seed: HarnessConfig }) {
             </div>
             <span>TOOL NETWORK / LOCAL SCENARIO</span>
           </div>
-          {view === "lab" && (
-            <div
-              className="execution-stream"
-              aria-label="Recorded execution events"
-            >
-              <div className="stream-heading">
-                <span className="eyebrow">
-                  {report ? "RECORDED EVENT STREAM" : "EXECUTION TELEMETRY"}
-                </span>
-                <span>
-                  {report
-                    ? `${report.steps.filter((step) => step.index <= LAB_STAGES[stage].step).length} / ${report.steps.length} events revealed`
-                    : "Awaiting mission"}
-                </span>
-              </div>
-              <div className="stream-events">
-                {report ? (
-                  report.steps
-                    .filter((step) => step.index <= LAB_STAGES[stage].step)
-                    .slice(-3)
-                    .map((step) => (
-                      <button
-                        key={step.index}
-                        onClick={() => {
-                          goToStage(
-                            Math.max(
-                              0,
-                              LAB_STAGES.findIndex(
-                                (item) =>
-                                  item.step ===
-                                  (step.index === 6 ? 7 : step.index),
-                              ),
-                            ),
-                          );
-                        }}
-                      >
-                        <span className="event-seq">
-                          {String(step.index).padStart(2, "0")}
-                        </span>
-                        <span className={`event-state ${step.status}`}>
-                          {step.status}
-                        </span>
-                        <span>
-                          <b>{step.actor}</b> {step.title}
-                        </span>
-                        <span>↗</span>
-                      </button>
-                    ))
-                ) : (
-                  <p>
-                    Tool calls, diagnosis, configuration changes and
-                    verification appear here after a real backend execution.
-                  </p>
-                )}
-              </div>
+          <div
+            className="execution-stream"
+            aria-label="Recorded execution events"
+          >
+            <div className="stream-heading">
+              <span className="eyebrow">
+                {report ? "RECORDED EVENT STREAM" : "EXECUTION TELEMETRY"}
+              </span>
+              <span>
+                {report
+                  ? `${report.steps.filter((step) => step.index <= LAB_STAGES[stage].step).length} / ${report.steps.length} events revealed`
+                  : "Awaiting mission"}
+              </span>
             </div>
-          )}
+            <div className="stream-events">
+              {report ? (
+                report.steps
+                  .filter((step) => step.index <= LAB_STAGES[stage].step)
+                  .slice(-3)
+                  .map((step) => (
+                    <button
+                      key={step.index}
+                      onClick={() => {
+                        goToStage(
+                          Math.max(
+                            0,
+                            LAB_STAGES.findIndex(
+                              (item) =>
+                                item.step ===
+                                (step.index === 6 ? 7 : step.index),
+                            ),
+                          ),
+                        );
+                      }}
+                    >
+                      <span className="event-seq">
+                        {String(step.index).padStart(2, "0")}
+                      </span>
+                      <span className={`event-state ${step.status}`}>
+                        {step.status}
+                      </span>
+                      <span>
+                        <b>{step.actor}</b> {step.title}
+                      </span>
+                      <span>↗</span>
+                    </button>
+                  ))
+              ) : (
+                <p>
+                  Tool calls, diagnosis, configuration changes and verification
+                  appear here after a real backend execution.
+                </p>
+              )}
+            </div>
+          </div>
         </section>
         <aside className="operator">
           <div className="panel-top">

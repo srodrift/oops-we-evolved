@@ -1,6 +1,6 @@
 # Oops, We Evolved!
 
-The home page is now an interactive 3D infrastructure control room with stage-specific packet motion, a Raindrop evidence station, zoom/pan/fit camera controls and an event stream. The original Spark and Pulse artwork is preserved in the World view; Pulse requires requirements verification acceptance, a saved harness and a successful rerun.
+The home page is now an interactive 3D infrastructure control room with stage-specific packet motion, a Raindrop evidence station, zoom/pan/fit camera controls and an event stream. The interface is focused on the operational simulation; the World tab has been removed. Original artwork assets remain in the repository.
 
 ## Experiments
 
@@ -46,11 +46,11 @@ Open http://localhost:3033. Configure integrations using the existing `.env.exam
 
 - 17 harness, evidence-redaction, replay-gating and rejection tests pass.
 - Lint, TypeScript and production build pass.
-- Chrome against the production build: real Run produces recovery; the corrupt fallback is rejected; evidence opens/closes and exports the actual report; Replay and Reset do not issue a new POST; zoom/pan/fit, packet freeze/resume, stage focus, reduced motion and keyboard inspection work. World returns to Spark on rewind or rejection.
+- Chrome against the production build: real Run produces recovery; the corrupt fallback is rejected; evidence opens/closes and exports the actual report; Replay and Reset do not issue a new POST; zoom/pan/fit, packet freeze/resume, stage focus, reduced motion and keyboard inspection work.
 - Mobile at 390px: no horizontal overflow; controls and panels reflow.
 - Live Raindrop/MongoDB checks were not run: no credentials in this checkout.
 
-Screenshots are in `review/` (ready, diagnosis, mutation, recovered, rejected, evidence, World and mobile).
+Screenshots are in `review/` (ready, diagnosis, mutation, recovered, rejected, evidence and mobile).
 
 To reproduce browser verification, install Chromium with `npx playwright install chromium` and run `npm run test:browser` against a running local app. Set `MORPH_BASE_URL` for another port, `MORPH_BROWSER_PATH` for installed Chrome, and `MORPH_CAPTURE_DIR=review` to refresh screenshots.
 
@@ -59,4 +59,4 @@ To reproduce browser verification, install Chromium with `npx playwright install
 1. Enter an incident brief, choose **Primary outage** and Run Mission. Point out the live request label, then the explicitly recorded replay.
 2. Follow the red failure into Raindrop evidence, the cited event into MORPH, and requirements verification testing into the green recovered route. Pause or step to explain any stage.
 3. Inspect Evidence and show the actual event ID, delivery status, configuration and persistence readback. Name the integration mode honestly.
-4. Choose **Corrupt fallback** and Run Mission. Show that a responding tool still fails requirements; requirements verification rejects it and Pulse stays locked.
+4. Choose **Corrupt fallback** and Run Mission. Show that a responding tool still fails requirements; requirements verification rejects it and nothing is saved.
