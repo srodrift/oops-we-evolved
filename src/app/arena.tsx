@@ -43,7 +43,7 @@ export function Arena({ seed }: { seed: HarnessConfig }) {
         return;
       }
       setStage(sequence[index]);
-    }, 900);
+    }, 4000);
     return () => window.clearInterval(timer);
   }, [report, seed]);
 
@@ -83,10 +83,7 @@ export function Arena({ seed }: { seed: HarnessConfig }) {
       <div className="cine-shade" />
 
       <header className="cine-top">
-        <div>
-          <p className="text-xs tracking-[0.28em] text-white/75 uppercase">Glitch Theory</p>
-          <h1 className="font-serif text-4xl leading-none text-white">Oops, We Evolved!</h1>
-        </div>
+        <h1 className="font-serif text-4xl leading-none text-white">Oops, We Evolved!</h1>
         <button
           type="button"
           onClick={runCycle}
