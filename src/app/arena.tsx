@@ -1,17 +1,31 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
+import { AtlasGuardian, GlitchFox, MorphCreature, NovaPulse, NovaSpark } from "@/components/characters";
 import { toBoard, type Board, type HarnessColumn } from "@/lib/harness/board";
 import { ARENA_TASK, type CycleReport, type HarnessConfig } from "@/lib/harness/types";
-
-const STORY =
-  "An agent had one allowed tool. That tool died. The failure was recorded, the harness retired the dead tool, saved the new rules, and finished the job with the working tool.";
 
 export function Arena({ seed }: { seed: HarnessConfig }) {
   const [report, setReport] = useState<CycleReport | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
   const board = toBoard(seed, report);
+  const outcome = board.ran ? readOutcome(board) : null;
+  const evolved = board.morph.v2State === "approved" && board.atlas.verdict === "Accepted";
+  const showGlitch = Boolean(board.glitch.summary);
+  const showMorph = board.morph.v2State === "approved" || board.morph.v2State === "proposed";
+  const showAtlas = Boolean(board.atlas.verdict);
+
+  const novaLine = evolved
+    ? "The job is done. I became Pulse."
+    : "I run the job with the one tool I'm allowed.";
+  const glitchLine = outcome?.deadTool
+    ? `I caught ${outcome.deadTool} and filed the Raindrop event.`
+    : "I caught the failure and filed the Raindrop event.";
+  const morphLine = outcome?.deadTool && outcome.workingTool
+    ? `I retired ${outcome.deadTool} and saved ${outcome.workingTool}.`
+    : "I retired the dead tool and saved the new rules.";
+  const atlasLine = "I checked the rerun. The old failure is gone.";
 
   async function runCycle() {
     setRunning(true);
@@ -30,80 +44,121 @@ export function Arena({ seed }: { seed: HarnessConfig }) {
     }
   }
 
-  const outcome = board.ran ? readOutcome(board) : null;
-
   return (
-    <main className="mx-auto flex w-full max-w-[1120px] flex-1 flex-col px-8 py-16 sm:px-12 lg:px-16 lg:py-20">
-      <p className="text-xs font-medium tracking-[0.28em] text-muted uppercase">Glitch Theory</p>
-      <div className="mt-8 flex flex-col gap-10 lg:flex-row lg:items-end lg:justify-between">
-        <div className="max-w-[40rem]">
-          <h1 className="font-serif text-5xl leading-[0.95] font-medium tracking-tight sm:text-7xl">Oops, We Evolved!</h1>
-          <p className="mt-8 font-serif text-2xl leading-snug text-foreground italic sm:text-[1.7rem]">{STORY}</p>
+    <main className="arena-root">
+      <div className="arena-beam" />
+      <div className="arena-floor" />
+      <header className="relative z-20 flex items-center justify-between gap-6 px-8 pt-6">
+        <div>
+          <p className="text-xs font-medium tracking-[0.28em] text-muted uppercase">Glitch Theory</p>
+          <h1 className="font-serif text-4xl leading-none tracking-tight">Oops, We Evolved!</h1>
         </div>
-        <div className="flex shrink-0 flex-col items-start gap-3 lg:items-end">
-          <button
-            type="button"
-            onClick={runCycle}
-            disabled={running}
-            className="h-14 bg-accent px-10 text-lg font-semibold tracking-wide text-black disabled:opacity-60"
-          >
-            {running ? "Running" : "Run"}
-          </button>
-          <p className="text-sm text-muted">No keys required.</p>
+        <button
+          type="button"
+          onClick={runCycle}
+          disabled={running}
+          className="h-14 bg-accent px-10 text-lg font-semibold tracking-wide text-black disabled:opacity-60"
+        >
+          {running ? "Running" : "Run"}
+        </button>
+      </header>
+
+      <section className="relative z-10 grid min-h-0 flex-1 grid-cols-[1fr_1.15fr_1fr] items-center gap-2 px-8">
+        <div className="flex h-full items-center justify-center">
+          {showGlitch ? (
+            <Cast name="GLITCH" tone="text-glitch" line={glitchLine} className="cast-arrive">
+              <div className="h-64 w-64">
+                <GlitchFox />
+              </div>
+            </Cast>
+          ) : null}
         </div>
-      </div>
 
-      {error ? <p className="mt-10 text-base text-fail">{error}</p> : null}
+        <div className="flex h-full flex-col items-center justify-center" data-nova-form={evolved ? "pulse" : "spark"}>
+          <Cast name="NOVA" tone="text-nova" line={novaLine} form={evolved ? "pulse" : "spark"}>
+            <div className={`nova-bob relative h-96 w-96 ${evolved ? "is-evolved" : ""}`}>
+              <div className="nova-spark">
+                <NovaSpark />
+              </div>
+              <div className="nova-pulse">
+                <NovaPulse />
+              </div>
+              <div className="nova-flash pointer-events-none absolute inset-0 bg-white/70 opacity-0" />
+            </div>
+          </Cast>
+        </div>
 
-      {outcome ? (
-        <section className="mt-20 border-t border-line pt-12">
-          <div className="grid items-start gap-10 md:grid-cols-[1fr_auto_1fr] md:gap-8">
-            <ToolSide label="Before" name={outcome.deadTool} state="Off" />
-            <p className="hidden pt-10 font-serif text-4xl text-muted md:block" aria-hidden="true">
+        <div className="flex h-full flex-col items-center justify-center gap-1">
+          {showMorph ? (
+            <Cast name="MORPH" tone="text-morph" line={morphLine} className="cast-arrive cast-morph">
+              <div className="h-48 w-48">
+                <MorphCreature />
+              </div>
+            </Cast>
+          ) : null}
+          {showAtlas ? (
+            <Cast name="ATLAS" tone="text-atlas" line={atlasLine} className="cast-arrive cast-atlas">
+              <div className="h-48 w-48">
+                <AtlasGuardian />
+              </div>
+            </Cast>
+          ) : null}
+        </div>
+      </section>
+
+      <footer className="relative z-20 border-t border-line px-8 py-3">
+        {error ? <p className="text-sm text-fail">{error}</p> : null}
+        {outcome ? (
+          <div className="flex items-end justify-between gap-8">
+            <div>
+              <p className="text-xs tracking-[0.22em] text-muted uppercase">Before</p>
+              <p className="font-serif text-2xl leading-none">{outcome.deadTool ?? "—"}</p>
+              <p className="text-xs tracking-[0.18em] text-muted uppercase">Off</p>
+            </div>
+            <p className="font-serif text-3xl text-muted" aria-hidden="true">
               →
             </p>
-            <ToolSide label="After" name={outcome.workingTool} state="On" done={outcome.headline} />
+            <div>
+              <p className="text-xs tracking-[0.22em] text-muted uppercase">After</p>
+              <p className="font-serif text-2xl leading-none">{outcome.workingTool ?? "—"}</p>
+              <p className="text-xs tracking-[0.18em] text-accent uppercase">On</p>
+            </div>
+            <div className="ml-auto text-right">
+              <p className="font-mono text-xs text-muted">{outcome.eventId ?? "Raindrop not recorded"}</p>
+              <p className="text-sm">{outcome.atlasVersion ? `Atlas version ${outcome.atlasVersion}` : "Atlas not saved"}</p>
+            </div>
           </div>
-          <dl className="mt-16 grid gap-8 border-t border-line pt-8 sm:grid-cols-2">
-            <div>
-              <dt className="text-xs tracking-[0.22em] text-muted uppercase">Raindrop</dt>
-              <dd className="mt-2 font-mono text-sm text-foreground">{outcome.eventId ?? "Not recorded"}</dd>
-            </div>
-            <div>
-              <dt className="text-xs tracking-[0.22em] text-muted uppercase">Atlas</dt>
-              <dd className="mt-2 text-sm text-foreground">{outcome.atlasVersion ? `Version ${outcome.atlasVersion}` : "Not saved"}</dd>
-            </div>
-          </dl>
-        </section>
-      ) : (
-        <p className="mt-20 border-t border-line pt-10 text-base text-muted">Press Run. The before and after appear here.</p>
-      )}
+        ) : (
+          <p className="text-sm text-muted">Press Run. NOVA is waiting as Spark.</p>
+        )}
+      </footer>
     </main>
   );
 }
 
-function ToolSide({
-  label,
+function Cast({
   name,
-  state,
-  done,
+  tone,
+  line,
+  form,
+  className,
+  children,
 }: {
-  label: string;
-  name: string | null;
-  state: "Off" | "On";
-  done?: string | null;
+  name: "NOVA" | "GLITCH" | "MORPH" | "ATLAS";
+  tone: string;
+  line: string;
+  form?: "spark" | "pulse";
+  className?: string;
+  children: ReactNode;
 }) {
   return (
-    <div>
-      <p className="text-xs tracking-[0.22em] text-muted uppercase">{label}</p>
-      <p className="mt-4 font-serif text-4xl leading-none tracking-tight">{name ?? "—"}</p>
-      <p className={`mt-4 text-sm font-semibold tracking-[0.18em] uppercase ${state === "On" ? "text-accent" : "text-muted"}`}>{state}</p>
-      {done ? (
-        <p className="mt-8 max-w-sm text-base leading-relaxed text-foreground">
-          Job done. <span className="text-muted">{done}</span>
-        </p>
-      ) : null}
-    </div>
+    <figure className={`flex max-w-xs flex-col items-center text-center ${className ?? ""}`} data-voice-character={name} data-voice-text={line} data-voice-form={form}>
+      {children}
+      <figcaption className="mt-1">
+        <p className={`text-xs font-semibold tracking-[0.22em] uppercase ${tone}`}>{name}</p>
+        <p className="mt-1 text-sm leading-snug text-foreground">{line}</p>
+      </figcaption>
+    </figure>
   );
 }
 
