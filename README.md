@@ -1,55 +1,94 @@
 # Oops, We Evolved!
 
-A self-improving agent harness. the agent runs a task, a configured tool really throws, Raindrop evidence records that failure, MORPH proposes a new harness, requirements verification tests it, and the approved version is what the next run loads.
+**An agent harness recovery experiment: repair a failed tool configuration, then prove the answer is still correct.**
 
-## The cycle
+When an agent's primary tool fails, a responding backup is not automatically a safe replacement. Oops, We Evolved! uses captured failure evidence to propose a harness repair, checks that repair against the task's requirements, and persists only approved configurations.
 
-1. **the agent** executes “retrieve the arena status brief” with harness v1.
-2. **orbital_uplink** is invoked and throws `ToolUnavailableError`. The executor does not skip the call or swap tools on its own.
-3. **Raindrop evidence** captures that throw as one Raindrop failure event: a tool span (`name`, `input`, `error`, `durationMs`) and a `selfDiagnose` diagnostic (`eventId`, `description`, `category`, `source`, `sentiment`). The diagnosis is read from that event. With `RAINDROP_API_KEY` or `RAINDROP_WRITE_KEY`, the official `raindrop-ai` SDK sends the same event (`begin` → `trackTool({ error })` → `selfDiagnose` → `finish`). With no key, a local adapter returns that event and nothing is sent. Diagnosis is never skipped.
-4. **Harness repair** cites that event (id, span, error) as the reason it disables the span's tool, enables the other available `fetch_brief` tool, names that fallback in a rule, adds the live-fallback guardrail, and retains the failure in context. An OpenAI model may write the proposal when `OPENAI_API_KEY` is set. The cause is still copied from the Raindrop event. A deterministic proposer covers the demo.
-5. **requirements verification** reruns the task and accepts the proposal only when the mutation cites that same event and the rerun no longer throws the span's error and returns the expected headline.
-6. The approved version is stored in MongoDB Atlas when `MONGODB_URI` is set, otherwise in `data/harness-versions.json`.
-7. **the agent** loads that version in a fresh read and returns `GROUND ARCHIVE // ARENA NOMINAL`.
+The functional core is the repair and verification pipeline. The interactive 3D scene makes its recorded execution inspectable.
 
-## Run it
+[One-minute demo video](deliverables/oops-we-evolved-demo.mp4) · [Demo narration](DEMO.md) · [Live sponsor verification evidence](deliverables/live-sponsor-proof.json) · [Implementation PR](https://github.com/srodrift/oops-we-evolved/pull/1)
 
-```bash
-npm install
-npm test
-npm run cycle
-npm run dev
+![3D infrastructure simulation after verified recovery](review/morph-lab-3d-recovered.png)
+
+## Try the experiment
+
+1. Enter a short incident brief. Its first nonempty line is the exact headline the agent must retrieve.
+2. Choose **Primary outage** and click **Run Mission**. The primary tool actually throws; the backup returns your supplied headline.
+3. Follow the recorded replay: **Challenge → Execution → Raindrop Evidence → Harness Mutation → Verification → Evolution**.
+4. Inspect the event ID, failed tool call, configuration changes, requirement checks, persistence result, and final answer.
+5. Choose **Corrupt fallback** and run again. The backup responds with the wrong headline. Verification rejects the repair and no new harness version is saved.
+
+**Run Mission** starts a new backend execution. **Replay Execution**, **Reset View**, timeline controls, rotation, zoom, and pan only change the view. The backend returns a complete report; the animation is explicitly an execution replay, not streamed telemetry. Inspect Evidence exports the actual redacted report as JSON.
+
+## How it works
+
+- **Agent:** executes the bounded headline-retrieval task using the active harness.
+- **Raindrop:** captures the invoked tool's failure, event ID, error, and diagnostic cause. The repair cites this evidence.
+- **Harness repair:** proposes disabling the failed tool, authorizing the fallback, retaining failure context, and updating rules and guardrails.
+- **Verification:** tests both the configuration and the returned answer. A successful tool invocation alone cannot approve a repair.
+- **MongoDB Atlas:** persists approved versioned configurations in `morph.harness_versions`, including their cause, evidence, and verification decision. The saved configuration is read back before the final run.
+
+MongoDB Atlas is the database. Requirements verification is application code, not a MongoDB evaluation service.
+
+## Verified sponsor integrations
+
+The live integration check passed with configured credentials:
+
+| Check | Result |
+| --- | --- |
+| Raindrop terminal failure events for recovery and rejection | Acknowledged |
+| Approved harness written to MongoDB Atlas | Passed |
+| Independent MongoDB client reads back the same version and event ID | Passed |
+| Final execution returns the correct headline | Passed |
+| Incorrect fallback rejected without creating a new version | Passed |
+
+See [redacted proof](deliverables/live-sponsor-proof.json). Raindrop dashboard indexing and separately batched tool/signal delivery were not independently verified. The acknowledged terminal event also includes the diagnostic cause.
+
+## Scope
+
+The primary and fallback tools are controlled local implementations, not remote communications services. The operator's brief supplies test data to the local archive. The proposer is deterministic by default; an optional OpenAI proposer is supported. The demo shows one failure-driven repair iteration per mission, starting from the seed harness. It does not claim continuous recursive self-improvement, long-horizon autonomy, or automatic recovery for arbitrary production agents.
+
+The implementation in the linked PR adds the 3D/SVG simulation, operator-supplied briefs, fault experiments, replay controls, evidence inspection/export, requirement checks, and live integration verification to the existing harness foundation. Submission authors must identify which work was created during the event and disclose any earlier work. Hackathon Atlas Sandbox membership must be confirmed separately through the organizer's invitation and Atlas organization/project; connectivity alone does not establish eligibility.
+
+## Run locally
+
+```sh
+npm ci
+cp .env.example .env.local
+npm run dev -- --port 3034
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to operate **Oops, We Evolved!**, the interactive 3D infrastructure control room. Enter your incident brief, choose **Primary outage** or **Corrupt fallback** and press **Run Mission** to execute the real harness. Recorded results replay through six stages; zoom, pan, pause, step, inspect evidence and compare the configuration changes. **Replay Execution** and **Reset View** never call the backend. See [MORPH-LAB.md](MORPH-LAB.md) for controls, verification and the short demo sequence.
+Open http://localhost:3034. Fill in the gitignored `.env.local` for live integrations:
 
-`npm run cycle` prints the same report as JSON. Exit code is 0 when the second the agent run succeeds.
+| Variable | Purpose | If absent |
+| --- | --- | --- |
+| `MONGODB_URI` | MongoDB Atlas persistence | Local file storage |
+| `RAINDROP_API_KEY` or `RAINDROP_WRITE_KEY` | Live Raindrop delivery | Local evidence capture |
+| `OPENAI_API_KEY` | Optional model-based harness proposal | Deterministic proposal |
 
-Copy `.env.example` to `.env.local` only if you want Atlas, Raindrop, or OpenAI. The cycle, the tests, and the UI all run with no keys.
+Restart after changing credentials. Keep keys server-side; do not use `NEXT_PUBLIC_` prefixes or commit secrets. The UI distinguishes live delivery, local capture, database/file storage, and proposal source.
 
-## What keys change
+## Validation
 
-| Variable                                   | When unset                                                           | When set                                                                     |
-| ------------------------------------------ | -------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| `MONGODB_URI`                              | Versions go to `data/harness-versions.json`                          | Versions go to `morph.harness_versions` via the official MongoDB Node driver |
-| `RAINDROP_API_KEY` or `RAINDROP_WRITE_KEY` | The same failure event is held locally and still drives the mutation | That event is sent to Raindrop                                               |
-| `OPENAI_API_KEY`                           | Deterministic proposer                                               | `gpt-4o-mini` may propose; invalid JSON falls back                           |
-| `ELEVENLABS_API_KEY`                       | Unused                                                               | Unused                                                                       |
+```sh
+npm test
+npm run lint
+npm run build
+npm run verify:sponsors
+```
 
-`.env`, `.env.local`, and other `.env*` files are gitignored. `.env.example` is the only env file that belongs in git, and it has empty values.
+17 tests, lint, TypeScript, and production build passed. Unit tests use local adapters and do not prove live sponsor delivery. `verify:sponsors` requires both live services, executes recovery and rejection, checks independent persistence readback, and writes redacted proof.
 
-## Tests
+For browser verification, start the app, install Chromium with `npx playwright install chromium`, then run:
 
-`npm test` runs the cycle with a temp file store and the local Raindrop adapter. It does not use the network or any API key. It checks that v1 throws from a real `orbital_uplink` call, Raindrop evidence diagnoses that Raindrop span, the repair’s tool swap cites the span (including a decoy span that is not `orbital_uplink`), requirements verification rejects a proposal that ignores the span or still enables it, a second store instance loads version 2, and the rerun no longer throws that error.
+```sh
+MORPH_BASE_URL=http://localhost:3034 npm run test:browser
+```
 
-## Browser verification
+Browser checks passed for real recovery/rejection, operator-derived output, camera controls, replay isolation, packet pause, reduced motion, evidence download, keyboard inspection, mobile layout, and HTTP errors. Set `MORPH_BROWSER_PATH` to use an installed Chrome executable and `MORPH_CAPTURE_DIR=review` to refresh screenshots.
 
-Start the app, then run `npm run test:browser`. Install Chromium once with `npx playwright install chromium`, or set `MORPH_BROWSER_PATH` to an installed Chrome executable. `MORPH_BASE_URL` defaults to `http://localhost:3033`; `MORPH_CAPTURE_DIR=review` saves screenshots. The browser check executes real recovery and rejection experiments, verifies replay isolation, camera controls, frozen packet motion, reduced motion, evidence download, keyboard navigation, mobile layout and explicit HTTP-error handling.
+## Deploy on Vercel
 
-Deployment remains separate from the review branch.
+Import this repository with **Next.js** and root directory **`./`**. The latest implementation is merged into **`main`**. Configure `MONGODB_URI` and `RAINDROP_API_KEY` as server-side environment variables in the deployment environment. File persistence is for local use; use Atlas for hosted deployments. Atlas must allow the deployment's database connection.
 
-## Live sponsor proof
-
-Configure `MONGODB_URI` and `RAINDROP_API_KEY` (or `RAINDROP_WRITE_KEY`) in the gitignored `.env.local`, then run `npm run verify:sponsors`. This loads Next's environment configuration and requires live sponsor credentials; local adapters cannot pass. It runs recovery and corrupt-fallback rejection, checks Raindrop terminal-event acknowledgement, reads the saved harness through a new MongoDB client, verifies the same event ID survived persistence, and verifies rejection does not create a new version.
-
-A successful run writes redacted `deliverables/live-sponsor-proof.json`. Match the event ID in the Raindrop dashboard to confirm remote visibility. Terminal-event acknowledgement does not independently establish dashboard indexing or separately batched tool/signal delivery. The tools themselves remain controlled local implementations. Restart the demo after changing credentials.
+Deploy, then test the public URL in an incognito window. Run a mission and confirm **Delivered** and **MongoDB · saved**. No hosted production URL is claimed in this README; a local verification does not establish that a Vercel deployment works.
